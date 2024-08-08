@@ -67,12 +67,14 @@ from dust3r_visloc.evaluation import get_pose_error, aggregate_stats, export_res
    - `aggregate_stats` 함수를 사용하여 전체 데이터셋에 대한 성능 통계를 집계
    - `export_results` 함수를 사용하여 결과를 파일로 저장
 
+# 7-scenes:
+# scene in 'chess' 'fire' 'heads' 'office' 'pumpkin' 'redkitchen' 'stairs'
 python3 visloc.py 
     --model_name DUSt3R_ViTLarge_BaseDecoder_512_dpt 
-    --dataset "VislocAachenDayNight('/path/to/prepared/Aachen-Day-Night-v1.1/', subscene='${scene}', pairsfile='fire_top50', topk=20)" 
+    --dataset "VislocSevenScenes('/path/to/prepared/7-scenes/', subscene='${scene}', pairsfile='APGeM-LM18_top20', topk=1)" 
     --pnp_mode poselib 
     --reprojection_error_diag_ratio 0.008 
-    --output_dir /path/to/output/Aachen-Day-Night-v1.1/${scene}/loc
+    --output_dir /path/to/output/7-scenes/${scene}/loc
 
 """
 def get_args_parser():
