@@ -19,7 +19,11 @@ if __name__ == '__main__':
     # load_images는 이미지 목록 또는 디렉토리를 받을 수 있습니다.
     images: List[Dict[str, Any]] = load_images([
         'data/left_frames/0.png',
+        'data/left_frames/1.png',
+        'data/left_frames/2.png',
         'data/right_frames/0.png'
+        'data/right_frames/1.png'
+        'data/right_frames/2.png'
     ],
                          size=512)
     # pairs: 길이 2 짜리 리스트. Tuple(1-2쌍), Tuple(2-1쌍)
@@ -84,7 +88,7 @@ if __name__ == '__main__':
     #       compute_global_alignment를 실행할 필요가 없습니다.
     scene: PairViewer = global_aligner(output,
                            device=device,
-                           mode=GlobalAlignerMode.PairViewer)#GlobalAlignerMode.PointCloudOptimizer)
+                           mode=GlobalAlignerMode.PointCloudOptimizer)#GlobalAlignerMode.PointCloudOptimizer)
     loss = scene.compute_global_alignment(init="mst",
                                           niter=niter,
                                           schedule=schedule,
@@ -113,7 +117,7 @@ type(confidence_masks): <class 'list'>
     pts3d = scene.get_pts3d()
     confidence_masks = scene.get_masks()
     # 재구성 시각화
-    # scene.show()
+    scene.show()
     # 두 이미지 간의 2D-2D 매칭 찾기
     from dust3r.utils.geometry import find_reciprocal_matches, xy_grid
     pts2d_list, pts3d_list = [], []
