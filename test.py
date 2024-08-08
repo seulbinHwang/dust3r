@@ -89,18 +89,28 @@ if __name__ == '__main__':
                                           niter=niter,
                                           schedule=schedule,
                                           lr=lr)
+    """
+type(imgs): <class 'list'>
+type(focals): <class 'torch.nn.parameter.Parameter'>
+type(poses): <class 'torch.nn.parameter.Parameter'>
+type(pts3d): <class 'list'>
+type(confidence_masks): <class 'list'>
 
+    """
     # scene에서 유용한 값을 가져옵니다:
-    imgs = scene.imgs
+    imgs: List = scene.imgs
     focals = scene.get_focals()
     poses = scene.get_im_poses()
     pts3d = scene.get_pts3d()
     confidence_masks = scene.get_masks()
-    print("type(imgs):", type(imgs))
-    print("type(focals):", type(focals))
-    print("type(poses):", type(poses))
-    print("type(pts3d):", type(pts3d))
-    print("type(confidence_masks):", type(confidence_masks))
+    print("len(imgs):", len(imgs))
+    print("type(imgs[0]):", type(imgs[0]))
+    print("focals.shape:", focals.shape)
+    print("poses.shape:", poses.shape)
+    print("len(pts3d):", len(pts3d))
+    print("type(pts3d[0]):", type(pts3d[0]))
+    print("len(confidence_masks):", len(confidence_masks))
+    print("type(confidence_masks[0]):", type(confidence_masks[0]))
 
 
     # 재구성 시각화
