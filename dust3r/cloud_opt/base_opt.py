@@ -320,10 +320,10 @@ class BasePCOptimizer(nn.Module):
 #### `compute_global_alignment` 메서드
 
 1. **목적**:
-   - 글로벌 정렬을 위한 초기화 및 최적화 과정을 수행
+   - "글로벌 정렬"을 위한 초기화 및 최적화 과정을 수행
 
 2. **주요 역할**:
-   - 초기화 옵션(`init`)에 따라 초기화 방법을 선택하고 실행합니다.
+   - 초기화 옵션(`init`)에 따라 초기화 방법을 선택하고 실행
      - `'msp'` 또는 `'mst'`: 최소 스패닝 트리를 이용한 초기화.
      - `'known_poses'`: 이미 알려진 포즈를 이용한 초기화.
    - 초기화가 완료되면 `global_alignment_loop` 함수를 호출하여 최적화 루프를 시작
@@ -332,26 +332,6 @@ class BasePCOptimizer(nn.Module):
    - `init`: 초기화 방법을 지정.
    - `niter_PnP`: 초기화 과정에서 사용될 PnP(iterative pose estimation) 반복 횟수.
    - `kw`: 추가적인 키워드 인자들.
-
-#### `global_alignment_iter` 함수 (코드에서 생략된 부분)
-
-1. **목적**:
-   - 최적화 루프 내에서 각 반복(iteration)마다 수행되는 최적화 단위 작업을 정의합니다.
-
-2. **주요 역할**:
-   - 현재 반복의 손실(loss) 값을 계산합니다.
-   - 옵티마이저를 통해 네트워크 파라미터들을 업데이트합니다.
-   - 학습률을 스케줄링에 따라 조정합니다.
-
-3. **인자**:
-   - `net`: 최적화할 네트워크 객체.
-   - `current_iter`: 현재 반복 번호.
-   - `total_iter`: 총 반복 횟수.
-   - `lr_base`: 초기 학습률.
-   - `lr_min`: 최소 학습률.
-   - `optimizer`: 파라미터 업데이트를 위한 옵티마이저.
-   - `schedule`: 학습률 스케줄링 방법.
-
         """
         if init is None:
             pass
@@ -452,6 +432,28 @@ def global_alignment_loop(net,
 
 def global_alignment_iter(net, cur_iter, niter, lr_base, lr_min, optimizer,
                           schedule):
+    """
+#### `global_alignment_iter` 함수 (코드에서 생략된 부분)
+
+1. **목적**:
+   - 최적화 루프 내에서 각 반복(iteration)마다 수행되는 최적화 단위 작업을 정의
+
+2. **주요 역할**:
+   - 현재 반복의 손실(loss) 값을 계산
+   - 옵티마이저를 통해 네트워크 파라미터들을 업데이트
+   - 학습률을 스케줄링에 따라 조정
+
+3. **인자**:
+   - `net`: 최적화할 네트워크 객체.
+   - `current_iter`: 현재 반복 번호.
+   - `total_iter`: 총 반복 횟수.
+   - `lr_base`: 초기 학습률.
+   - `lr_min`: 최소 학습률.
+   - `optimizer`: 파라미터 업데이트를 위한 옵티마이저.
+   - `schedule`: 학습률 스케줄링 방법.
+
+
+    """
     t = cur_iter / niter
     if schedule == 'cosine':
         lr = cosine_schedule(t, lr_base, lr_min)

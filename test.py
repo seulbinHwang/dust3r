@@ -18,8 +18,8 @@ if __name__ == '__main__':
     model = AsymmetricCroCo3DStereo.from_pretrained(model_name).to(device)
     # load_images는 이미지 목록 또는 디렉토리를 받을 수 있습니다.
     images: List[Dict[str, Any]] = load_images([
-        'data/left_frames/0.png',
-        'data/right_frames/0.png',
+        'data/left_frames/3.png',
+        'data/right_frames/3.png',
     ],
                          size=512)
     # pairs: 길이 2 짜리 리스트. Tuple(1-2쌍), Tuple(2-1쌍)
