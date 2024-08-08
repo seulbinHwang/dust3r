@@ -100,7 +100,7 @@ type(pts3d): <class 'list'>
     - type(pts3d[0]): <class 'torch.Tensor'>
 type(confidence_masks): <class 'list'>
     - len(confidence_masks): 2
-    - type(confidence_masks[0]): <class 'torch.Tensor'>
+    - type(confidence_masks[0]): <class 'torch.Tensor'> # (288, 512)
 
 
 
@@ -111,10 +111,8 @@ type(confidence_masks): <class 'list'>
     poses = scene.get_im_poses()
     pts3d = scene.get_pts3d()
     confidence_masks = scene.get_masks()
-    print("confidence_masks[0].shape:", confidence_masks[0].shape)
-    raise NotImplementedError
     # 재구성 시각화
-    scene.show()
+    # scene.show()
     # 두 이미지 간의 2D-2D 매칭 찾기
     from dust3r.utils.geometry import find_reciprocal_matches, xy_grid
     pts2d_list, pts3d_list = [], []
