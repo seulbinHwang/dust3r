@@ -91,10 +91,18 @@ if __name__ == '__main__':
                                           lr=lr)
     """
 type(imgs): <class 'list'>
-type(focals): <class 'torch.nn.parameter.Parameter'>
-type(poses): <class 'torch.nn.parameter.Parameter'>
+    - len(imgs): 2
+    - type(imgs[0]): <class 'numpy.ndarray'>
+type(focals): <class 'torch.nn.parameter.Parameter'> # (2)
+type(poses): <class 'torch.nn.parameter.Parameter'> # (2, 4, 4)
 type(pts3d): <class 'list'>
+    - len(pts3d): 2
+    - type(pts3d[0]): <class 'torch.Tensor'>
 type(confidence_masks): <class 'list'>
+    - len(confidence_masks): 2
+    - type(confidence_masks[0]): <class 'torch.Tensor'>
+
+
 
     """
     # scene에서 유용한 값을 가져옵니다:
@@ -103,14 +111,9 @@ type(confidence_masks): <class 'list'>
     poses = scene.get_im_poses()
     pts3d = scene.get_pts3d()
     confidence_masks = scene.get_masks()
-    print("len(imgs):", len(imgs))
-    print("type(imgs[0]):", type(imgs[0]))
-    print("focals.shape:", focals.shape)
-    print("poses.shape:", poses.shape)
-    print("len(pts3d):", len(pts3d))
-    print("type(pts3d[0]):", type(pts3d[0]))
-    print("len(confidence_masks):", len(confidence_masks))
-    print("type(confidence_masks[0]):", type(confidence_masks[0]))
+    print("imgs[0].shape:", imgs[0].shape)
+    print("pts3d[0].shape:", pts3d[0].shape)
+    print("confidence_masks[0].shape:", confidence_masks[0].shape)
 
 
     # 재구성 시각화
