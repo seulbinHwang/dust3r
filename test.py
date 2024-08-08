@@ -129,10 +129,8 @@ type(confidence_masks): <class 'list'>
 
     # 몇 가지 매칭을 시각화합니다.
     import numpy as np
-    import matplotlib
     from matplotlib import pyplot as pl
 
-    matplotlib.use('Qt5Agg')  # 또는 'Qt5Agg'
     n_viz = 10
     match_idx_to_viz = np.round(np.linspace(0, num_matches - 1,
                                             n_viz)).astype(int)
