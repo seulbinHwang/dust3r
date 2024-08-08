@@ -9,10 +9,10 @@ import numpy as np
 import torch
 import PIL.Image
 
-import kapture
-from kapture.io.csv import kapture_from_dir
+import kapture_import_7scenes
+from kapture_import_7scenes.io.csv import kapture_from_dir
 from kapture_localization.utils.pairsfile import get_ordered_pairs_from_file
-from kapture.io.records import depth_map_from_file
+from kapture_import_7scenes.io.records import depth_map_from_file
 
 from dust3r_visloc.datasets.utils import cam_to_world_from_kapture, get_resize_function, rescale_points3d
 from dust3r_visloc.datasets.base_dataset import BaseVislocDataset
