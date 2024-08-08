@@ -52,7 +52,7 @@ def reg_dense_conf(x, mode):
     """
     mode, vmin, vmax = mode
     if mode == 'exp':
-        return vmin + x.exp().clip(max=vmax-vmin)
+        return vmin + x.exp().clip(max=vmax - vmin)
     if mode == 'sigmoid':
         return (vmax - vmin) * torch.sigmoid(x) + vmin
     raise ValueError(f'bad {mode=}')

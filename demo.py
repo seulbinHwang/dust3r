@@ -13,6 +13,7 @@ from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.demo import get_args_parser, main_demo, set_print_with_timestamp
 
 import matplotlib.pyplot as pl
+
 pl.ion()
 
 torch.backends.cuda.matmul.allow_tf32 = True  # for gpu >= Ampere and pytorch >= 1.12
@@ -36,10 +37,17 @@ if __name__ == '__main__':
         weights_path = args.weights
     else:
         weights_path = "naver/" + args.model_name
-    model = AsymmetricCroCo3DStereo.from_pretrained(weights_path).to(args.device)
+    model = AsymmetricCroCo3DStereo.from_pretrained(weights_path).to(
+        args.device)
 
     # dust3r will write the 3D model inside tmpdirname
     with tempfile.TemporaryDirectory(suffix='dust3r_gradio_demo') as tmpdirname:
         if not args.silent:
             print('Outputing stuff in', tmpdirname)
-        main_demo(tmpdirname, model, args.device, args.image_size, server_name, args.server_port, silent=args.silent)
+        main_demo(tmpdirname,
+                  model,
+                  args.device,
+                  args.image_size,
+                  server_name,
+                  args.server_port,
+                  silent=args.silent)

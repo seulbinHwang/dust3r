@@ -8,6 +8,7 @@
 # --------------------------------------------------------
 import os.path as osp
 import os
+
 os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"  # noqa
 import cv2  # noqa
 import numpy as np
@@ -18,12 +19,14 @@ from dust3r.datasets.base.base_stereo_view_dataset import BaseStereoViewDataset
 
 
 class Habitat(BaseStereoViewDataset):
+
     def __init__(self, size, *args, ROOT, **kwargs):
         self.ROOT = ROOT
         super().__init__(*args, **kwargs)
         assert self.split is not None
         # loading list of scenes
-        with open(osp.join(self.ROOT, f'Habitat_{size}_scenes_{self.split}.txt')) as f:
+        with open(osp.join(self.ROOT,
+                           f'Habitat_{size}_scenes_{self.split}.txt')) as f:
             self.scenes = f.read().splitlines()
         self.instances = list(range(1, 5))
 
@@ -40,21 +43,24 @@ class Habitat(BaseStereoViewDataset):
         scene = self.scenes[idx]
         data_path, key = osp.split(osp.join(self.ROOT, scene))
         views = []
-        two_random_views = [0, rng.choice(self.instances)]  # view 0 is connected with all other views
+        two_random_views = [0, rng.choice(self.instances)
+                           ]  # view 0 is connected with all other views
         for view_index in two_random_views:
             # load the view (and use the next one if this one's broken)
             for ii in range(view_index, view_index + 5):
-                image, depthmap, intrinsics, camera_pose = self._load_one_view(data_path, key, ii % 5, resolution, rng)
+                image, depthmap, intrinsics, camera_pose = self._load_one_view(
+                    data_path, key, ii % 5, resolution, rng)
                 if np.isfinite(camera_pose).all():
                     break
-            views.append(dict(
-                img=image,
-                depthmap=depthmap,
-                camera_pose=camera_pose,  # cam2world
-                camera_intrinsics=intrinsics,
-                dataset='Habitat',
-                label=osp.relpath(data_path, self.ROOT),
-                instance=f"{key}_{view_index}"))
+            views.append(
+                dict(
+                    img=image,
+                    depthmap=depthmap,
+                    camera_pose=camera_pose,  # cam2world
+                    camera_intrinsics=intrinsics,
+                    dataset='Habitat',
+                    label=osp.relpath(data_path, self.ROOT),
+                    instance=f"{key}_{view_index}"))
         return views
 
     def _load_one_view(self, data_path, key, view_index, resolution, rng):
@@ -63,9 +69,11 @@ class Habitat(BaseStereoViewDataset):
         image = Image.open(impath)
 
         depthmap_filename = osp.join(data_path, f"{key}_{view_index}_depth.exr")
-        depthmap = cv2.imread(depthmap_filename, cv2.IMREAD_GRAYSCALE | cv2.IMREAD_ANYDEPTH)
+        depthmap = cv2.imread(depthmap_filename,
+                              cv2.IMREAD_GRAYSCALE | cv2.IMREAD_ANYDEPTH)
 
-        camera_params_filename = osp.join(data_path, f"{key}_{view_index}_camera_params.json")
+        camera_params_filename = osp.join(
+            data_path, f"{key}_{view_index}_camera_params.json")
         with open(camera_params_filename, 'r') as f:
             camera_params = json.load(f)
 
@@ -84,8 +92,11 @@ if __name__ == "__main__":
     from dust3r.viz import SceneViz, auto_cam_size
     from dust3r.utils.image import rgb
 
-    dataset = Habitat(1_000_000, split='train', ROOT="data/habitat_processed",
-                      resolution=224, aug_crop=16)
+    dataset = Habitat(1_000_000,
+                      split='train',
+                      ROOT="data/habitat_processed",
+                      resolution=224,
+                      aug_crop=16)
 
     for idx in np.random.permutation(len(dataset)):
         views = dataset[idx]

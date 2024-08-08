@@ -13,9 +13,10 @@ from dust3r.datasets.base.base_stereo_view_dataset import BaseStereoViewDataset
 from dust3r.utils.image import imread_cv2
 
 
-class StaticThings3D (BaseStereoViewDataset):
+class StaticThings3D(BaseStereoViewDataset):
     """ Dataset of indoor scenes, 5 images each time
     """
+
     def __init__(self, ROOT, *args, mask_bg='rand', **kwargs):
         self.ROOT = ROOT
         super().__init__(*args, **kwargs)
@@ -39,15 +40,18 @@ class StaticThings3D (BaseStereoViewDataset):
 
         views = []
 
-        mask_bg = (self.mask_bg == True) or (self.mask_bg == 'rand' and rng.choice(2))
+        mask_bg = (self.mask_bg == True) or (self.mask_bg == 'rand' and
+                                             rng.choice(2))
 
-        CAM = {b'l':'left', b'r':'right'}
+        CAM = {b'l': 'left', b'r': 'right'}
         for cam, idx in [(CAM[cam1], im1), (CAM[cam2], im2)]:
             num = f"{idx:04n}"
-            img = num+"_clean.jpg" if rng.choice(2) else num+"_final.jpg"
+            img = num + "_clean.jpg" if rng.choice(2) else num + "_final.jpg"
             image = imread_cv2(osp.join(self.ROOT, seq_path, cam, img))
-            depthmap = imread_cv2(osp.join(self.ROOT, seq_path, cam, num+".exr"))
-            camera_params = np.load(osp.join(self.ROOT, seq_path, cam, num+".npz"))
+            depthmap = imread_cv2(
+                osp.join(self.ROOT, seq_path, cam, num + ".exr"))
+            camera_params = np.load(
+                osp.join(self.ROOT, seq_path, cam, num + ".npz"))
 
             intrinsics = camera_params['intrinsics']
             camera_pose = camera_params['cam2world']
@@ -55,16 +59,23 @@ class StaticThings3D (BaseStereoViewDataset):
             if mask_bg:
                 depthmap[depthmap > 200] = 0
 
-            image, depthmap, intrinsics = self._crop_resize_if_necessary(image, depthmap, intrinsics, resolution, rng, info=(seq_path,cam,img))
+            image, depthmap, intrinsics = self._crop_resize_if_necessary(
+                image,
+                depthmap,
+                intrinsics,
+                resolution,
+                rng,
+                info=(seq_path, cam, img))
 
-            views.append(dict(
-                img = image, 
-                depthmap = depthmap,
-                camera_pose = camera_pose, # cam2world
-                camera_intrinsics = intrinsics,
-                dataset = 'StaticThings3D',
-                label = seq_path,
-                instance = cam+'_'+img))
+            views.append(
+                dict(
+                    img=image,
+                    depthmap=depthmap,
+                    camera_pose=camera_pose,  # cam2world
+                    camera_intrinsics=intrinsics,
+                    dataset='StaticThings3D',
+                    label=seq_path,
+                    instance=cam + '_' + img))
 
         return views
 
@@ -74,7 +85,9 @@ if __name__ == '__main__':
     from dust3r.viz import SceneViz, auto_cam_size
     from dust3r.utils.image import rgb
 
-    dataset = StaticThings3D(ROOT="data/staticthings3d_processed", resolution=224, aug_crop=16)
+    dataset = StaticThings3D(ROOT="data/staticthings3d_processed",
+                             resolution=224,
+                             aug_crop=16)
 
     for idx in np.random.permutation(len(dataset)):
         views = dataset[idx]
@@ -90,7 +103,7 @@ if __name__ == '__main__':
             viz.add_pointcloud(pts3d, colors, valid_mask)
             viz.add_camera(pose_c2w=views[view_idx]['camera_pose'],
                            focal=views[view_idx]['camera_intrinsics'][0, 0],
-                           color=(idx*255, (1 - idx)*255, 0),
+                           color=(idx * 255, (1 - idx) * 255, 0),
                            image=colors,
                            cam_size=cam_size)
         viz.show()

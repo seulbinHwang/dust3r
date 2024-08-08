@@ -9,7 +9,11 @@ import torch
 from dust3r.utils.geometry import xy_grid
 
 
-def estimate_focal_knowing_depth(pts3d, pp, focal_mode='median', min_focal=0., max_focal=np.inf):
+def estimate_focal_knowing_depth(pts3d,
+                                 pp,
+                                 focal_mode='median',
+                                 min_focal=0.,
+                                 max_focal=np.inf):
     """ Reprojection method, for when the absolute depth is known:
         1) estimate the camera focal using a robust estimator
         2) reproject points onto true rays, minimizing a certain error
@@ -18,7 +22,8 @@ def estimate_focal_knowing_depth(pts3d, pp, focal_mode='median', min_focal=0., m
     assert THREE == 3
 
     # centered pixel grid
-    pixels = xy_grid(W, H, device=pts3d.device).view(1, -1, 2) - pp.view(-1, 1, 2)  # B,HW,2
+    pixels = xy_grid(W, H, device=pts3d.device).view(1, -1, 2) - pp.view(
+        -1, 1, 2)  # B,HW,2
     pts3d = pts3d.flatten(1, 2)  # (B, HW, 3)
 
     if focal_mode == 'median':
@@ -30,13 +35,15 @@ def estimate_focal_knowing_depth(pts3d, pp, focal_mode='median', min_focal=0., m
             fy_votes = (v * z) / y
 
             # assume square pixels, hence same focal for X and Y
-            f_votes = torch.cat((fx_votes.view(B, -1), fy_votes.view(B, -1)), dim=-1)
+            f_votes = torch.cat((fx_votes.view(B, -1), fy_votes.view(B, -1)),
+                                dim=-1)
             focal = torch.nanmedian(f_votes, dim=-1).values
 
     elif focal_mode == 'weiszfeld':
         # init focal with l2 closed form
         # we try to find focal = argmin Sum | pixel - focal * (x,y)/z|
-        xy_over_z = (pts3d[..., :2] / pts3d[..., 2:3]).nan_to_num(posinf=0, neginf=0)  # homogeneous (x,y,1)
+        xy_over_z = (pts3d[..., :2] / pts3d[..., 2:3]).nan_to_num(
+            posinf=0, neginf=0)  # homogeneous (x,y,1)
 
         dot_xy_px = (xy_over_z * pixels).sum(dim=-1)
         dot_xy_xy = xy_over_z.square().sum(dim=-1)
@@ -54,7 +61,8 @@ def estimate_focal_knowing_depth(pts3d, pp, focal_mode='median', min_focal=0., m
     else:
         raise ValueError(f'bad {focal_mode=}')
 
-    focal_base = max(H, W) / (2 * np.tan(np.deg2rad(60) / 2))  # size / 1.1547005383792515
-    focal = focal.clip(min=min_focal*focal_base, max=max_focal*focal_base)
+    focal_base = max(H, W) / (2 * np.tan(np.deg2rad(60) / 2)
+                             )  # size / 1.1547005383792515
+    focal = focal.clip(min=min_focal * focal_base, max=max_focal * focal_base)
     # print(focal)
     return focal

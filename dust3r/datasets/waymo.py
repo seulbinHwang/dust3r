@@ -13,7 +13,7 @@ from dust3r.datasets.base.base_stereo_view_dataset import BaseStereoViewDataset
 from dust3r.utils.image import imread_cv2
 
 
-class Waymo (BaseStereoViewDataset):
+class Waymo(BaseStereoViewDataset):
     """ Dataset of outdoor street scenes, 5 images each time
     """
 
@@ -26,7 +26,9 @@ class Waymo (BaseStereoViewDataset):
         with np.load(osp.join(self.ROOT, 'waymo_pairs.npz')) as data:
             self.scenes = data['scenes']
             self.frames = data['frames']
-            self.inv_frames = {frame: i for i, frame in enumerate(data['frames'])}
+            self.inv_frames = {
+                frame: i for i, frame in enumerate(data['frames'])
+            }
             self.pairs = data['pairs']  # (array of (scene_id, img1_id, img2_id)
             assert self.pairs[:, 0].max() == len(self.scenes) - 1
 
@@ -52,16 +54,22 @@ class Waymo (BaseStereoViewDataset):
             camera_pose = np.float32(camera_params['cam2world'])
 
             image, depthmap, intrinsics = self._crop_resize_if_necessary(
-                image, depthmap, intrinsics, resolution, rng, info=(seq_path, impath))
+                image,
+                depthmap,
+                intrinsics,
+                resolution,
+                rng,
+                info=(seq_path, impath))
 
-            views.append(dict(
-                img=image,
-                depthmap=depthmap,
-                camera_pose=camera_pose,  # cam2world
-                camera_intrinsics=intrinsics,
-                dataset='Waymo',
-                label=osp.relpath(seq_path, self.ROOT),
-                instance=impath))
+            views.append(
+                dict(
+                    img=image,
+                    depthmap=depthmap,
+                    camera_pose=camera_pose,  # cam2world
+                    camera_intrinsics=intrinsics,
+                    dataset='Waymo',
+                    label=osp.relpath(seq_path, self.ROOT),
+                    instance=impath))
 
         return views
 
@@ -71,7 +79,10 @@ if __name__ == '__main__':
     from dust3r.viz import SceneViz, auto_cam_size
     from dust3r.utils.image import rgb
 
-    dataset = Waymo(split='train', ROOT="data/megadepth_processed", resolution=224, aug_crop=16)
+    dataset = Waymo(split='train',
+                    ROOT="data/megadepth_processed",
+                    resolution=224,
+                    aug_crop=16)
 
     for idx in np.random.permutation(len(dataset)):
         views = dataset[idx]

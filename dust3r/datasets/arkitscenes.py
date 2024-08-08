@@ -15,6 +15,7 @@ from dust3r.utils.image import imread_cv2
 
 
 class ARKitScenes(BaseStereoViewDataset):
+
     def __init__(self, *args, split, ROOT, **kwargs):
         self.ROOT = ROOT
         super().__init__(*args, **kwargs)
@@ -53,24 +54,33 @@ class ARKitScenes(BaseStereoViewDataset):
             basename = self.images[view_idx]
 
             # Load RGB image
-            rgb_image = imread_cv2(osp.join(scene_dir, 'vga_wide', basename.replace('.png', '.jpg')))
+            rgb_image = imread_cv2(
+                osp.join(scene_dir, 'vga_wide',
+                         basename.replace('.png', '.jpg')))
             # Load depthmap
-            depthmap = imread_cv2(osp.join(scene_dir, 'lowres_depth', basename), cv2.IMREAD_UNCHANGED)
+            depthmap = imread_cv2(osp.join(scene_dir, 'lowres_depth', basename),
+                                  cv2.IMREAD_UNCHANGED)
             depthmap = depthmap.astype(np.float32) / 1000
             depthmap[~np.isfinite(depthmap)] = 0  # invalid
 
             rgb_image, depthmap, intrinsics = self._crop_resize_if_necessary(
-                rgb_image, depthmap, intrinsics, resolution, rng=rng, info=view_idx)
+                rgb_image,
+                depthmap,
+                intrinsics,
+                resolution,
+                rng=rng,
+                info=view_idx)
 
-            views.append(dict(
-                img=rgb_image,
-                depthmap=depthmap.astype(np.float32),
-                camera_pose=camera_pose.astype(np.float32),
-                camera_intrinsics=intrinsics.astype(np.float32),
-                dataset='arkitscenes',
-                label=self.scenes[scene_id] + '_' + basename,
-                instance=f'{str(idx)}_{str(view_idx)}',
-            ))
+            views.append(
+                dict(
+                    img=rgb_image,
+                    depthmap=depthmap.astype(np.float32),
+                    camera_pose=camera_pose.astype(np.float32),
+                    camera_intrinsics=intrinsics.astype(np.float32),
+                    dataset='arkitscenes',
+                    label=self.scenes[scene_id] + '_' + basename,
+                    instance=f'{str(idx)}_{str(view_idx)}',
+                ))
 
         return views
 
@@ -80,7 +90,10 @@ if __name__ == "__main__":
     from dust3r.viz import SceneViz, auto_cam_size
     from dust3r.utils.image import rgb
 
-    dataset = ARKitScenes(split='train', ROOT="data/arkitscenes_processed", resolution=224, aug_crop=16)
+    dataset = ARKitScenes(split='train',
+                          ROOT="data/arkitscenes_processed",
+                          resolution=224,
+                          aug_crop=16)
 
     for idx in np.random.permutation(len(dataset)):
         views = dataset[idx]

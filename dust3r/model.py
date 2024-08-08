@@ -20,8 +20,9 @@ from models.croco import CroCoNet  # noqa
 inf = float('inf')
 
 hf_version_number = huggingface_hub.__version__
-assert version.parse(hf_version_number) >= version.parse("0.22.0"), ("Outdated huggingface_hub version, "
-                                                                     "please reinstall requirements.txt")
+assert version.parse(hf_version_number) >= version.parse("0.22.0"), (
+    "Outdated huggingface_hub version, "
+    "please reinstall requirements.txt")
 
 
 def load_model(model_path, device, verbose=True):
@@ -32,7 +33,8 @@ def load_model(model_path, device, verbose=True):
     if 'landscape_only' not in args:
         args = args[:-1] + ', landscape_only=False)'
     else:
-        args = args.replace(" ", "").replace('landscape_only=True', 'landscape_only=False')
+        args = args.replace(" ", "").replace('landscape_only=True',
+                                             'landscape_only=False')
     assert "landscape_only=False" in args
     if verbose:
         print(f"instantiating : {args}")
@@ -43,34 +45,36 @@ def load_model(model_path, device, verbose=True):
     return net.to(device)
 
 
-class AsymmetricCroCo3DStereo (
-    CroCoNet,
-    huggingface_hub.PyTorchModelHubMixin,
-    library_name="dust3r",
-    repo_url="https://github.com/naver/dust3r",
-    tags=["image-to-3d"],
+class AsymmetricCroCo3DStereo(
+        CroCoNet,
+        huggingface_hub.PyTorchModelHubMixin,
+        library_name="dust3r",
+        repo_url="https://github.com/naver/dust3r",
+        tags=["image-to-3d"],
 ):
     """ Two siamese encoders, followed by two decoders.
     The goal is to output 3d points directly, both images in view1's frame
     (hence the asymmetry).   
     """
 
-    def __init__(self,
-                 output_mode='pts3d',
-                 head_type='linear',
-                 depth_mode=('exp', -inf, inf),
-                 conf_mode=('exp', 1, inf),
-                 freeze='none',
-                 landscape_only=True,
-                 patch_embed_cls='PatchEmbedDust3R',  # PatchEmbedDust3R or ManyAR_PatchEmbed
-                 **croco_kwargs):
+    def __init__(
+            self,
+            output_mode='pts3d',
+            head_type='linear',
+            depth_mode=('exp', -inf, inf),
+            conf_mode=('exp', 1, inf),
+            freeze='none',
+            landscape_only=True,
+            patch_embed_cls='PatchEmbedDust3R',  # PatchEmbedDust3R or ManyAR_PatchEmbed
+            **croco_kwargs):
         self.patch_embed_cls = patch_embed_cls
         self.croco_args = fill_default_args(croco_kwargs, super().__init__)
         super().__init__(**croco_kwargs)
 
         # dust3r specific initialization
         self.dec_blocks2 = deepcopy(self.dec_blocks)
-        self.set_downstream_head(output_mode, head_type, landscape_only, depth_mode, conf_mode, **croco_kwargs)
+        self.set_downstream_head(output_mode, head_type, landscape_only,
+                                 depth_mode, conf_mode, **croco_kwargs)
         self.set_freeze(freeze)
 
     @classmethod
@@ -79,13 +83,17 @@ class AsymmetricCroCo3DStereo (
             return load_model(pretrained_model_name_or_path, device='cpu')
         else:
             try:
-                model = super(AsymmetricCroCo3DStereo, cls).from_pretrained(pretrained_model_name_or_path, **kw)
+                model = super(AsymmetricCroCo3DStereo, cls).from_pretrained(
+                    pretrained_model_name_or_path, **kw)
             except TypeError as e:
-                raise Exception(f'tried to load {pretrained_model_name_or_path} from huggingface, but failed')
+                raise Exception(
+                    f'tried to load {pretrained_model_name_or_path} from huggingface, but failed'
+                )
             return model
 
     def _set_patch_embed(self, img_size=224, patch_size=16, enc_embed_dim=768):
-        self.patch_embed = get_patch_embed(self.patch_embed_cls, img_size, patch_size, enc_embed_dim)
+        self.patch_embed = get_patch_embed(self.patch_embed_cls, img_size,
+                                           patch_size, enc_embed_dim)
 
     def load_state_dict(self, ckpt, **kw):
         # duplicate all weights for the second decoder if not present
@@ -109,8 +117,8 @@ class AsymmetricCroCo3DStereo (
         """ No prediction head """
         return
 
-    def set_downstream_head(self, output_mode, head_type, landscape_only, depth_mode, conf_mode, patch_size, img_size,
-                            **kw):
+    def set_downstream_head(self, output_mode, head_type, landscape_only,
+                            depth_mode, conf_mode, patch_size, img_size, **kw):
         assert img_size[0] % patch_size == 0 and img_size[1] % patch_size == 0, \
             f'{img_size=} must be multiple of {patch_size=}'
         self.output_mode = output_mode
@@ -118,11 +126,19 @@ class AsymmetricCroCo3DStereo (
         self.depth_mode = depth_mode
         self.conf_mode = conf_mode
         # allocate heads
-        self.downstream_head1 = head_factory(head_type, output_mode, self, has_conf=bool(conf_mode))
-        self.downstream_head2 = head_factory(head_type, output_mode, self, has_conf=bool(conf_mode))
+        self.downstream_head1 = head_factory(head_type,
+                                             output_mode,
+                                             self,
+                                             has_conf=bool(conf_mode))
+        self.downstream_head2 = head_factory(head_type,
+                                             output_mode,
+                                             self,
+                                             has_conf=bool(conf_mode))
         # magic wrapper
-        self.head1 = transpose_to_landscape(self.downstream_head1, activate=landscape_only)
-        self.head2 = transpose_to_landscape(self.downstream_head2, activate=landscape_only)
+        self.head1 = transpose_to_landscape(self.downstream_head1,
+                                            activate=landscape_only)
+        self.head2 = transpose_to_landscape(self.downstream_head2,
+                                            activate=landscape_only)
 
     def _encode_image(self, image, true_shape):
         # embed the image into patches  (x has size B x Npatches x C)
@@ -140,8 +156,9 @@ class AsymmetricCroCo3DStereo (
 
     def _encode_image_pairs(self, img1, img2, true_shape1, true_shape2):
         if img1.shape[-2:] == img2.shape[-2:]:
-            out, pos, _ = self._encode_image(torch.cat((img1, img2), dim=0),
-                                             torch.cat((true_shape1, true_shape2), dim=0))
+            out, pos, _ = self._encode_image(
+                torch.cat((img1, img2), dim=0),
+                torch.cat((true_shape1, true_shape2), dim=0))
             out, out2 = out.chunk(2, dim=0)
             pos, pos2 = pos.chunk(2, dim=0)
         else:
@@ -154,17 +171,21 @@ class AsymmetricCroCo3DStereo (
         img2 = view2['img']
         B = img1.shape[0]
         # Recover true_shape when available, otherwise assume that the img shape is the true one
-        shape1 = view1.get('true_shape', torch.tensor(img1.shape[-2:])[None].repeat(B, 1))
-        shape2 = view2.get('true_shape', torch.tensor(img2.shape[-2:])[None].repeat(B, 1))
+        shape1 = view1.get('true_shape',
+                           torch.tensor(img1.shape[-2:])[None].repeat(B, 1))
+        shape2 = view2.get('true_shape',
+                           torch.tensor(img2.shape[-2:])[None].repeat(B, 1))
         # warning! maybe the images have different portrait/landscape orientations
 
         if is_symmetrized(view1, view2):
             # computing half of forward pass!'
-            feat1, feat2, pos1, pos2 = self._encode_image_pairs(img1[::2], img2[::2], shape1[::2], shape2[::2])
+            feat1, feat2, pos1, pos2 = self._encode_image_pairs(
+                img1[::2], img2[::2], shape1[::2], shape2[::2])
             feat1, feat2 = interleave(feat1, feat2)
             pos1, pos2 = interleave(pos1, pos2)
         else:
-            feat1, feat2, pos1, pos2 = self._encode_image_pairs(img1, img2, shape1, shape2)
+            feat1, feat2, pos1, pos2 = self._encode_image_pairs(
+                img1, img2, shape1, shape2)
 
         return (shape1, shape2), (feat1, feat2), (pos1, pos2)
 
@@ -197,14 +218,20 @@ class AsymmetricCroCo3DStereo (
 
     def forward(self, view1, view2):
         # encode the two images --> B,S,D
-        (shape1, shape2), (feat1, feat2), (pos1, pos2) = self._encode_symmetrized(view1, view2)
+        (shape1,
+         shape2), (feat1,
+                   feat2), (pos1,
+                            pos2) = self._encode_symmetrized(view1, view2)
 
         # combine all ref images into object-centric representation
         dec1, dec2 = self._decoder(feat1, pos1, feat2, pos2)
 
         with torch.cuda.amp.autocast(enabled=False):
-            res1 = self._downstream_head(1, [tok.float() for tok in dec1], shape1)
-            res2 = self._downstream_head(2, [tok.float() for tok in dec2], shape2)
+            res1 = self._downstream_head(1, [tok.float() for tok in dec1],
+                                         shape1)
+            res2 = self._downstream_head(2, [tok.float() for tok in dec2],
+                                         shape2)
 
-        res2['pts3d_in_other_view'] = res2.pop('pts3d')  # predict view2's pts3d in view1's frame
+        res2['pts3d_in_other_view'] = res2.pop(
+            'pts3d')  # predict view2's pts3d in view1's frame
         return res1, res2

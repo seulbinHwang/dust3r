@@ -16,6 +16,7 @@ from dust3r.utils.image import imread_cv2
 
 
 class ScanNetpp(BaseStereoViewDataset):
+
     def __init__(self, *args, ROOT, **kwargs):
         self.ROOT = ROOT
         super().__init__(*args, **kwargs)
@@ -48,24 +49,33 @@ class ScanNetpp(BaseStereoViewDataset):
             basename = self.images[view_idx]
 
             # Load RGB image
-            rgb_image = imread_cv2(osp.join(scene_dir, 'images', basename + '.jpg'))
+            rgb_image = imread_cv2(
+                osp.join(scene_dir, 'images', basename + '.jpg'))
             # Load depthmap
-            depthmap = imread_cv2(osp.join(scene_dir, 'depth', basename + '.png'), cv2.IMREAD_UNCHANGED)
+            depthmap = imread_cv2(
+                osp.join(scene_dir, 'depth', basename + '.png'),
+                cv2.IMREAD_UNCHANGED)
             depthmap = depthmap.astype(np.float32) / 1000
             depthmap[~np.isfinite(depthmap)] = 0  # invalid
 
             rgb_image, depthmap, intrinsics = self._crop_resize_if_necessary(
-                rgb_image, depthmap, intrinsics, resolution, rng=rng, info=view_idx)
+                rgb_image,
+                depthmap,
+                intrinsics,
+                resolution,
+                rng=rng,
+                info=view_idx)
 
-            views.append(dict(
-                img=rgb_image,
-                depthmap=depthmap.astype(np.float32),
-                camera_pose=camera_pose.astype(np.float32),
-                camera_intrinsics=intrinsics.astype(np.float32),
-                dataset='ScanNet++',
-                label=self.scenes[scene_id] + '_' + basename,
-                instance=f'{str(idx)}_{str(view_idx)}',
-            ))
+            views.append(
+                dict(
+                    img=rgb_image,
+                    depthmap=depthmap.astype(np.float32),
+                    camera_pose=camera_pose.astype(np.float32),
+                    camera_intrinsics=intrinsics.astype(np.float32),
+                    dataset='ScanNet++',
+                    label=self.scenes[scene_id] + '_' + basename,
+                    instance=f'{str(idx)}_{str(view_idx)}',
+                ))
         return views
 
 
@@ -74,7 +84,10 @@ if __name__ == "__main__":
     from dust3r.viz import SceneViz, auto_cam_size
     from dust3r.utils.image import rgb
 
-    dataset = ScanNetpp(split='train', ROOT="data/scannetpp_processed", resolution=224, aug_crop=16)
+    dataset = ScanNetpp(split='train',
+                        ROOT="data/scannetpp_processed",
+                        resolution=224,
+                        aug_crop=16)
 
     for idx in np.random.permutation(len(dataset)):
         views = dataset[idx]
@@ -90,7 +103,7 @@ if __name__ == "__main__":
             viz.add_pointcloud(pts3d, colors, valid_mask)
             viz.add_camera(pose_c2w=views[view_idx]['camera_pose'],
                            focal=views[view_idx]['camera_intrinsics'][0, 0],
-                           color=(idx*255, (1 - idx)*255, 0),
+                           color=(idx * 255, (1 - idx) * 255, 0),
                            image=colors,
                            cam_size=cam_size)
         viz.show()

@@ -5,6 +5,7 @@
 # Base class
 # --------------------------------------------------------
 class BaseVislocDataset:
+
     def __init__(self):
         pass
 
@@ -14,6 +15,6 @@ class BaseVislocDataset:
 
     def __len__(self):
         raise NotImplementedError()
-    
+
     def __getitem__(self, idx):
         raise NotImplementedError()

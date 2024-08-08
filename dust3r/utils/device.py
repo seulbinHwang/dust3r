@@ -39,14 +39,24 @@ def todevice(batch, device, callback=None, non_blocking=False):
 to_device = todevice  # alias
 
 
-def to_numpy(x): return todevice(x, 'numpy')
-def to_cpu(x): return todevice(x, 'cpu')
-def to_cuda(x): return todevice(x, 'cuda')
+def to_numpy(x):
+    return todevice(x, 'numpy')
+
+
+def to_cpu(x):
+    return todevice(x, 'cpu')
+
+
+def to_cuda(x):
+    return todevice(x, 'cuda')
 
 
 def collate_with_cat(whatever, lists=False):
     if isinstance(whatever, dict):
-        return {k: collate_with_cat(vals, lists=lists) for k, vals in whatever.items()}
+        return {
+            k: collate_with_cat(vals, lists=lists)
+            for k, vals in whatever.items()
+        }
 
     elif isinstance(whatever, (tuple, list)):
         if len(whatever) == 0:
@@ -61,12 +71,16 @@ def collate_with_cat(whatever, lists=False):
         if isinstance(elem, tuple):
             return T(collate_with_cat(x, lists=lists) for x in zip(*whatever))
         if isinstance(elem, dict):
-            return {k: collate_with_cat([e[k] for e in whatever], lists=lists) for k in elem}
+            return {
+                k: collate_with_cat([e[k] for e in whatever], lists=lists)
+                for k in elem
+            }
 
         if isinstance(elem, torch.Tensor):
             return listify(whatever) if lists else torch.cat(whatever)
         if isinstance(elem, np.ndarray):
-            return listify(whatever) if lists else torch.cat([torch.from_numpy(x) for x in whatever])
+            return listify(whatever) if lists else torch.cat(
+                [torch.from_numpy(x) for x in whatever])
 
         # otherwise, we just chain lists
         return sum(whatever, T())

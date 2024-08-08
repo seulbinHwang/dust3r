@@ -16,21 +16,25 @@ from dust3r.utils.image import imread_cv2
 
 
 class WildRGBD(Co3d):
+
     def __init__(self, mask_bg=True, *args, ROOT, **kwargs):
         super().__init__(mask_bg, *args, ROOT=ROOT, **kwargs)
         self.dataset_label = 'WildRGBD'
 
     def _get_metadatapath(self, obj, instance, view_idx):
-        return osp.join(self.ROOT, obj, instance, 'metadata', f'{view_idx:0>5d}.npz')
+        return osp.join(self.ROOT, obj, instance, 'metadata',
+                        f'{view_idx:0>5d}.npz')
 
     def _get_impath(self, obj, instance, view_idx):
         return osp.join(self.ROOT, obj, instance, 'rgb', f'{view_idx:0>5d}.jpg')
 
     def _get_depthpath(self, obj, instance, view_idx):
-        return osp.join(self.ROOT, obj, instance, 'depth', f'{view_idx:0>5d}.png')
+        return osp.join(self.ROOT, obj, instance, 'depth',
+                        f'{view_idx:0>5d}.png')
 
     def _get_maskpath(self, obj, instance, view_idx):
-        return osp.join(self.ROOT, obj, instance, 'masks', f'{view_idx:0>5d}.png')
+        return osp.join(self.ROOT, obj, instance, 'masks',
+                        f'{view_idx:0>5d}.png')
 
     def _read_depthmap(self, depthpath, input_metadata):
         # We store depths in the depth scale of 1000.
@@ -45,7 +49,10 @@ if __name__ == "__main__":
     from dust3r.viz import SceneViz, auto_cam_size
     from dust3r.utils.image import rgb
 
-    dataset = WildRGBD(split='train', ROOT="data/wildrgbd_processed", resolution=224, aug_crop=16)
+    dataset = WildRGBD(split='train',
+                       ROOT="data/wildrgbd_processed",
+                       resolution=224,
+                       aug_crop=16)
 
     for idx in np.random.permutation(len(dataset)):
         views = dataset[idx]

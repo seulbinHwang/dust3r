@@ -47,13 +47,21 @@ def get_imshapes(edges, pred_i, pred_j):
 
 def get_conf_trf(mode):
     if mode == 'log':
-        def conf_trf(x): return x.log()
+
+        def conf_trf(x):
+            return x.log()
     elif mode == 'sqrt':
-        def conf_trf(x): return x.sqrt()
+
+        def conf_trf(x):
+            return x.sqrt()
     elif mode == 'm1':
-        def conf_trf(x): return x-1
+
+        def conf_trf(x):
+            return x - 1
     elif mode in ('id', 'none'):
-        def conf_trf(x): return x
+
+        def conf_trf(x):
+            return x
     else:
         raise ValueError(f'bad mode for {mode=}')
     return conf_trf
@@ -82,7 +90,7 @@ def signed_expm1(x):
 
 def cosine_schedule(t, lr_start, lr_end):
     assert 0 <= t <= 1
-    return lr_end + (lr_start - lr_end) * (1+np.cos(t * np.pi))/2
+    return lr_end + (lr_start - lr_end) * (1 + np.cos(t * np.pi)) / 2
 
 
 def linear_schedule(t, lr_start, lr_end):

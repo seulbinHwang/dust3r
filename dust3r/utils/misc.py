@@ -56,9 +56,11 @@ def transpose_to_landscape(head, activate=True):
         then transpose the result in landscape 
         and stack everything back together.
     """
+
     def wrapper_no(decout, true_shape):
         B = len(true_shape)
-        assert true_shape[0:1].allclose(true_shape), 'true_shape must be all identical'
+        assert true_shape[0:1].allclose(
+            true_shape), 'true_shape must be all identical'
         H, W = true_shape[0].cpu().tolist()
         res = head(decout, (H, W))
         return res
@@ -79,7 +81,9 @@ def transpose_to_landscape(head, activate=True):
             return transposed(head(decout, (W, H)))
 
         # batch is a mix of both portraint & landscape
-        def selout(ar): return [d[ar] for d in decout]
+        def selout(ar):
+            return [d[ar] for d in decout]
+
         l_result = head(selout(is_landscape), (H, W))
         p_result = transposed(head(selout(is_portrait), (W, H)))
 
@@ -115,7 +119,8 @@ def invalid_to_zeros(arr, valid_mask, ndim=999):
         arr[~valid_mask] = 0
         nnz = valid_mask.view(len(valid_mask), -1).sum(1)
     else:
-        nnz = arr.numel() // len(arr) if len(arr) else 0  # number of point per image
+        nnz = arr.numel() // len(arr) if len(
+            arr) else 0  # number of point per image
     if arr.ndim > ndim:
         arr = arr.flatten(-2 - (arr.ndim - ndim), -2)
     return arr, nnz

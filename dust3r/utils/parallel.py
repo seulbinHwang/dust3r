@@ -9,7 +9,14 @@ from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import cpu_count
 
 
-def parallel_threads(function, args, workers=0, star_args=False, kw_args=False, front_num=1, Pool=ThreadPool, **tqdm_kw):
+def parallel_threads(function,
+                     args,
+                     workers=0,
+                     star_args=False,
+                     kw_args=False,
+                     front_num=1,
+                     Pool=ThreadPool,
+                     **tqdm_kw):
     """ tqdm but with parallel execution.
 
     Will essentially return 
@@ -41,7 +48,9 @@ def parallel_threads(function, args, workers=0, star_args=False, kw_args=False, 
             a = next(args)
         except StopIteration:
             return front  # end of the iterable
-        front.append(function(*a) if star_args else function(**a) if kw_args else function(a))
+        front.append(
+            function(*a) if star_args else function(
+                **a) if kw_args else function(a))
 
     # then parallel execution
     out = []

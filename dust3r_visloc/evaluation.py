@@ -20,18 +20,26 @@ def aggregate_stats(info_str, pose_errors, angular_errors):
 
     for trl_thr, ang_thr in [(0.1, 1), (0.25, 2), (0.5, 5), (5, 10)]:
         for pose_error, angular_error in zip(pose_errors, angular_errors):
-            correct_for_this_threshold = (pose_error < trl_thr) and (angular_error < ang_thr)
+            correct_for_this_threshold = (pose_error
+                                          < trl_thr) and (angular_error
+                                                          < ang_thr)
             stats[trl_thr, ang_thr] += correct_for_this_threshold
-    stats = {f'acc@{key[0]:g}m,{key[1]}deg': 100 * val / len(pose_errors) for key, val in stats.items()}
+    stats = {
+        f'acc@{key[0]:g}m,{key[1]}deg': 100 * val / len(pose_errors)
+        for key, val in stats.items()
+    }
     for metric, perf in stats.items():
         out_str += f'  - {metric:12s}={float(perf):.3f}'
     return out_str
 
 
 def get_pose_error(pr_camtoworld, gt_cam_to_world):
-    abs_transl_error = torch.linalg.norm(torch.tensor(pr_camtoworld[:3, 3]) - torch.tensor(gt_cam_to_world[:3, 3]))
-    abs_angular_error = roma.rotmat_geodesic_distance(torch.tensor(pr_camtoworld[:3, :3]),
-                                                      torch.tensor(gt_cam_to_world[:3, :3])) * 180 / np.pi
+    abs_transl_error = torch.linalg.norm(
+        torch.tensor(pr_camtoworld[:3, 3]) -
+        torch.tensor(gt_cam_to_world[:3, 3]))
+    abs_angular_error = roma.rotmat_geodesic_distance(
+        torch.tensor(pr_camtoworld[:3, :3]),
+        torch.tensor(gt_cam_to_world[:3, :3])) * 180 / np.pi
     return abs_transl_error, abs_angular_error
 
 
@@ -47,7 +55,8 @@ def export_results(output_dir, xp_label, query_names, poses_pred):
             else:
                 pr_world_to_querycam = np.linalg.inv(pr_querycam_to_world)
             query_shortname = os.path.basename(query_name)
-            pr_world_to_querycam_q = quaternion.from_rotation_matrix(pr_world_to_querycam[:3, :3])
+            pr_world_to_querycam_q = quaternion.from_rotation_matrix(
+                pr_world_to_querycam[:3, :3])
             pr_world_to_querycam_t = pr_world_to_querycam[:3, 3]
 
             line_pose = quaternion.as_float_array(pr_world_to_querycam_q).tolist() + \
@@ -59,7 +68,8 @@ def export_results(output_dir, xp_label, query_names, poses_pred):
             line_content_ltvl = [query_shortname] + line_pose
             lines_ltvl += ' '.join(str(v) for v in line_content_ltvl) + '\n'
 
-        with open(os.path.join(output_dir, xp_label + '_results.txt'), 'wt') as f:
+        with open(os.path.join(output_dir, xp_label + '_results.txt'),
+                  'wt') as f:
             f.write(lines)
         with open(os.path.join(output_dir, xp_label + '_ltvl.txt'), 'wt') as f:
             f.write(lines_ltvl)

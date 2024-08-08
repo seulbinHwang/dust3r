@@ -24,6 +24,7 @@ from typing import Sized
 import torch
 import torch.backends.cudnn as cudnn
 from torch.utils.tensorboard import SummaryWriter
+
 torch.backends.cuda.matmul.allow_tf32 = True  # for gpu >= Ampere and pytorch >= 1.12
 
 from dust3r.model import AsymmetricCroCo3DStereo, inf  # noqa: F401, needed when loading the model
@@ -39,53 +40,130 @@ from croco.utils.misc import NativeScalerWithGradNormCount as NativeScaler  # no
 def get_args_parser():
     parser = argparse.ArgumentParser('DUST3R training', add_help=False)
     # model and criterion
-    parser.add_argument('--model', default="AsymmetricCroCo3DStereo(patch_embed_cls='ManyAR_PatchEmbed')",
-                        type=str, help="string containing the model to build")
-    parser.add_argument('--pretrained', default=None, help='path of a starting checkpoint')
-    parser.add_argument('--train_criterion', default="ConfLoss(Regr3D(L21, norm_mode='avg_dis'), alpha=0.2)",
-                        type=str, help="train criterion")
-    parser.add_argument('--test_criterion', default=None, type=str, help="test criterion")
+    parser.add_argument(
+        '--model',
+        default="AsymmetricCroCo3DStereo(patch_embed_cls='ManyAR_PatchEmbed')",
+        type=str,
+        help="string containing the model to build")
+    parser.add_argument('--pretrained',
+                        default=None,
+                        help='path of a starting checkpoint')
+    parser.add_argument(
+        '--train_criterion',
+        default="ConfLoss(Regr3D(L21, norm_mode='avg_dis'), alpha=0.2)",
+        type=str,
+        help="train criterion")
+    parser.add_argument('--test_criterion',
+                        default=None,
+                        type=str,
+                        help="test criterion")
 
     # dataset
-    parser.add_argument('--train_dataset', required=True, type=str, help="training set")
-    parser.add_argument('--test_dataset', default='[None]', type=str, help="testing set")
+    parser.add_argument('--train_dataset',
+                        required=True,
+                        type=str,
+                        help="training set")
+    parser.add_argument('--test_dataset',
+                        default='[None]',
+                        type=str,
+                        help="testing set")
 
     # training
     parser.add_argument('--seed', default=0, type=int, help="Random seed")
-    parser.add_argument('--batch_size', default=64, type=int,
-                        help="Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus")
-    parser.add_argument('--accum_iter', default=1, type=int,
-                        help="Accumulate gradient iterations (for increasing the effective batch size under memory constraints)")
-    parser.add_argument('--epochs', default=800, type=int, help="Maximum number of epochs for the scheduler")
+    parser.add_argument(
+        '--batch_size',
+        default=64,
+        type=int,
+        help=
+        "Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus"
+    )
+    parser.add_argument(
+        '--accum_iter',
+        default=1,
+        type=int,
+        help=
+        "Accumulate gradient iterations (for increasing the effective batch size under memory constraints)"
+    )
+    parser.add_argument('--epochs',
+                        default=800,
+                        type=int,
+                        help="Maximum number of epochs for the scheduler")
 
-    parser.add_argument('--weight_decay', type=float, default=0.05, help="weight decay (default: 0.05)")
-    parser.add_argument('--lr', type=float, default=None, metavar='LR', help='learning rate (absolute lr)')
-    parser.add_argument('--blr', type=float, default=1.5e-4, metavar='LR',
-                        help='base learning rate: absolute_lr = base_lr * total_batch_size / 256')
-    parser.add_argument('--min_lr', type=float, default=0., metavar='LR',
+    parser.add_argument('--weight_decay',
+                        type=float,
+                        default=0.05,
+                        help="weight decay (default: 0.05)")
+    parser.add_argument('--lr',
+                        type=float,
+                        default=None,
+                        metavar='LR',
+                        help='learning rate (absolute lr)')
+    parser.add_argument(
+        '--blr',
+        type=float,
+        default=1.5e-4,
+        metavar='LR',
+        help='base learning rate: absolute_lr = base_lr * total_batch_size / 256'
+    )
+    parser.add_argument('--min_lr',
+                        type=float,
+                        default=0.,
+                        metavar='LR',
                         help='lower lr bound for cyclic schedulers that hit 0')
-    parser.add_argument('--warmup_epochs', type=int, default=40, metavar='N', help='epochs to warmup LR')
+    parser.add_argument('--warmup_epochs',
+                        type=int,
+                        default=40,
+                        metavar='N',
+                        help='epochs to warmup LR')
 
-    parser.add_argument('--amp', type=int, default=0,
-                        choices=[0, 1], help="Use Automatic Mixed Precision for pretraining")
-    parser.add_argument("--disable_cudnn_benchmark", action='store_true', default=False,
+    parser.add_argument('--amp',
+                        type=int,
+                        default=0,
+                        choices=[0, 1],
+                        help="Use Automatic Mixed Precision for pretraining")
+    parser.add_argument("--disable_cudnn_benchmark",
+                        action='store_true',
+                        default=False,
                         help="set cudnn.benchmark = False")
     # others
     parser.add_argument('--num_workers', default=8, type=int)
-    parser.add_argument('--world_size', default=1, type=int, help='number of distributed processes')
+    parser.add_argument('--world_size',
+                        default=1,
+                        type=int,
+                        help='number of distributed processes')
     parser.add_argument('--local_rank', default=-1, type=int)
-    parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
+    parser.add_argument('--dist_url',
+                        default='env://',
+                        help='url used to set up distributed training')
 
-    parser.add_argument('--eval_freq', type=int, default=1, help='Test loss evaluation frequency')
-    parser.add_argument('--save_freq', default=1, type=int,
-                        help='frequence (number of epochs) to save checkpoint in checkpoint-last.pth')
-    parser.add_argument('--keep_freq', default=20, type=int,
-                        help='frequence (number of epochs) to save checkpoint in checkpoint-%d.pth')
-    parser.add_argument('--print_freq', default=20, type=int,
-                        help='frequence (number of iterations) to print infos while training')
+    parser.add_argument('--eval_freq',
+                        type=int,
+                        default=1,
+                        help='Test loss evaluation frequency')
+    parser.add_argument(
+        '--save_freq',
+        default=1,
+        type=int,
+        help=
+        'frequence (number of epochs) to save checkpoint in checkpoint-last.pth'
+    )
+    parser.add_argument(
+        '--keep_freq',
+        default=20,
+        type=int,
+        help=
+        'frequence (number of epochs) to save checkpoint in checkpoint-%d.pth')
+    parser.add_argument(
+        '--print_freq',
+        default=20,
+        type=int,
+        help='frequence (number of iterations) to print infos while training')
 
     # output dir
-    parser.add_argument('--output_dir', default='./output/', type=str, help="path where to save the output")
+    parser.add_argument('--output_dir',
+                        default='./output/',
+                        type=str,
+                        help="path where to save the output")
     return parser
 
 
@@ -118,17 +196,25 @@ def train(args):
     # training dataset and loader
     print('Building train dataset {:s}'.format(args.train_dataset))
     #  dataset and loader
-    data_loader_train = build_dataset(args.train_dataset, args.batch_size, args.num_workers, test=False)
+    data_loader_train = build_dataset(args.train_dataset,
+                                      args.batch_size,
+                                      args.num_workers,
+                                      test=False)
     print('Building test dataset {:s}'.format(args.train_dataset))
-    data_loader_test = {dataset.split('(')[0]: build_dataset(dataset, args.batch_size, args.num_workers, test=True)
-                        for dataset in args.test_dataset.split('+')}
+    data_loader_test = {
+        dataset.split('(')[0]:
+            build_dataset(dataset, args.batch_size, args.num_workers, test=True)
+        for dataset in args.test_dataset.split('+')
+    }
 
     # model
     print('Loading model: {:s}'.format(args.model))
     model = eval(args.model)
     print(f'>> Creating train criterion = {args.train_criterion}')
     train_criterion = eval(args.train_criterion).to(device)
-    print(f'>> Creating test criterion = {args.test_criterion or args.train_criterion}')
+    print(
+        f'>> Creating test criterion = {args.test_criterion or args.train_criterion}'
+    )
     test_criterion = eval(args.test_criterion or args.criterion).to(device)
 
     model.to(device)
@@ -151,11 +237,15 @@ def train(args):
 
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[args.gpu], find_unused_parameters=True, static_graph=True)
+            model,
+            device_ids=[args.gpu],
+            find_unused_parameters=True,
+            static_graph=True)
         model_without_ddp = model.module
 
     # following timm: set wd as 0 for bias and norm layers
-    param_groups = misc.get_parameter_groups(model_without_ddp, args.weight_decay)
+    param_groups = misc.get_parameter_groups(model_without_ddp,
+                                             args.weight_decay)
     optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
     print(optimizer)
     loss_scaler = NativeScaler()
@@ -165,21 +255,37 @@ def train(args):
             if log_writer is not None:
                 log_writer.flush()
 
-            log_stats = dict(epoch=epoch, **{f'train_{k}': v for k, v in train_stats.items()})
+            log_stats = dict(
+                epoch=epoch,
+                **{
+                    f'train_{k}': v for k, v in train_stats.items()
+                })
             for test_name in data_loader_test:
                 if test_name not in test_stats:
                     continue
-                log_stats.update({test_name + '_' + k: v for k, v in test_stats[test_name].items()})
+                log_stats.update({
+                    test_name + '_' + k: v
+                    for k, v in test_stats[test_name].items()
+                })
 
-            with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
+            with open(os.path.join(args.output_dir, "log.txt"),
+                      mode="a",
+                      encoding="utf-8") as f:
                 f.write(json.dumps(log_stats) + "\n")
 
     def save_model(epoch, fname, best_so_far):
-        misc.save_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                        loss_scaler=loss_scaler, epoch=epoch, fname=fname, best_so_far=best_so_far)
+        misc.save_model(args=args,
+                        model_without_ddp=model_without_ddp,
+                        optimizer=optimizer,
+                        loss_scaler=loss_scaler,
+                        epoch=epoch,
+                        fname=fname,
+                        best_so_far=best_so_far)
 
-    best_so_far = misc.load_model(args=args, model_without_ddp=model_without_ddp,
-                                  optimizer=optimizer, loss_scaler=loss_scaler)
+    best_so_far = misc.load_model(args=args,
+                                  model_without_ddp=model_without_ddp,
+                                  optimizer=optimizer,
+                                  loss_scaler=loss_scaler)
     if best_so_far is None:
         best_so_far = float('inf')
     if global_rank == 0 and args.output_dir is not None:
@@ -202,8 +308,14 @@ def train(args):
         if (epoch > 0 and args.eval_freq > 0 and epoch % args.eval_freq == 0):
             test_stats = {}
             for test_name, testset in data_loader_test.items():
-                stats = test_one_epoch(model, test_criterion, testset,
-                                       device, epoch, log_writer=log_writer, args=args, prefix=test_name)
+                stats = test_one_epoch(model,
+                                       test_criterion,
+                                       testset,
+                                       device,
+                                       epoch,
+                                       log_writer=log_writer,
+                                       args=args,
+                                       prefix=test_name)
                 test_stats[test_name] = stats
 
                 # Save best of all
@@ -223,26 +335,37 @@ def train(args):
             break  # exit after writing last test to disk
 
         # Train
-        train_stats = train_one_epoch(
-            model, train_criterion, data_loader_train,
-            optimizer, device, epoch, loss_scaler,
-            log_writer=log_writer,
-            args=args)
+        train_stats = train_one_epoch(model,
+                                      train_criterion,
+                                      data_loader_train,
+                                      optimizer,
+                                      device,
+                                      epoch,
+                                      loss_scaler,
+                                      log_writer=log_writer,
+                                      args=args)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
 
-    save_final_model(args, args.epochs, model_without_ddp, best_so_far=best_so_far)
+    save_final_model(args,
+                     args.epochs,
+                     model_without_ddp,
+                     best_so_far=best_so_far)
 
 
 def save_final_model(args, epoch, model_without_ddp, best_so_far=None):
     output_dir = Path(args.output_dir)
     checkpoint_path = output_dir / 'checkpoint-final.pth'
     to_save = {
-        'args': args,
-        'model': model_without_ddp if isinstance(model_without_ddp, dict) else model_without_ddp.cpu().state_dict(),
-        'epoch': epoch
+        'args':
+            args,
+        'model':
+            model_without_ddp if isinstance(model_without_ddp, dict) else
+            model_without_ddp.cpu().state_dict(),
+        'epoch':
+            epoch
     }
     if best_so_far is not None:
         to_save['best_so_far'] = best_so_far
@@ -264,48 +387,63 @@ def build_dataset(dataset, batch_size, num_workers, test=False):
     return loader
 
 
-def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
-                    data_loader: Sized, optimizer: torch.optim.Optimizer,
-                    device: torch.device, epoch: int, loss_scaler,
+def train_one_epoch(model: torch.nn.Module,
+                    criterion: torch.nn.Module,
+                    data_loader: Sized,
+                    optimizer: torch.optim.Optimizer,
+                    device: torch.device,
+                    epoch: int,
+                    loss_scaler,
                     args,
                     log_writer=None):
     assert torch.backends.cuda.matmul.allow_tf32 == True
 
     model.train(True)
     metric_logger = misc.MetricLogger(delimiter="  ")
-    metric_logger.add_meter('lr', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
+    metric_logger.add_meter(
+        'lr', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
     accum_iter = args.accum_iter
 
     if log_writer is not None:
         print('log_dir: {}'.format(log_writer.log_dir))
 
-    if hasattr(data_loader, 'dataset') and hasattr(data_loader.dataset, 'set_epoch'):
+    if hasattr(data_loader, 'dataset') and hasattr(data_loader.dataset,
+                                                   'set_epoch'):
         data_loader.dataset.set_epoch(epoch)
-    if hasattr(data_loader, 'sampler') and hasattr(data_loader.sampler, 'set_epoch'):
+    if hasattr(data_loader, 'sampler') and hasattr(data_loader.sampler,
+                                                   'set_epoch'):
         data_loader.sampler.set_epoch(epoch)
 
     optimizer.zero_grad()
 
-    for data_iter_step, batch in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
+    for data_iter_step, batch in enumerate(
+            metric_logger.log_every(data_loader, args.print_freq, header)):
         epoch_f = epoch + data_iter_step / len(data_loader)
 
         # we use a per iteration (instead of per epoch) lr scheduler
         if data_iter_step % accum_iter == 0:
             misc.adjust_learning_rate(optimizer, epoch_f, args)
 
-        loss_tuple = loss_of_one_batch(batch, model, criterion, device,
+        loss_tuple = loss_of_one_batch(batch,
+                                       model,
+                                       criterion,
+                                       device,
                                        symmetrize_batch=True,
-                                       use_amp=bool(args.amp), ret='loss')
+                                       use_amp=bool(args.amp),
+                                       ret='loss')
         loss, loss_details = loss_tuple  # criterion returns two values
         loss_value = float(loss)
 
         if not math.isfinite(loss_value):
-            print("Loss is {}, stopping training".format(loss_value), force=True)
+            print("Loss is {}, stopping training".format(loss_value),
+                  force=True)
             sys.exit(1)
 
         loss /= accum_iter
-        loss_scaler(loss, optimizer, parameters=model.parameters(),
+        loss_scaler(loss,
+                    optimizer,
+                    parameters=model.parameters(),
                     update_grad=(data_iter_step + 1) % accum_iter == 0)
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()
@@ -318,8 +456,10 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         metric_logger.update(lr=lr)
         metric_logger.update(loss=loss_value, **loss_details)
 
-        if (data_iter_step + 1) % accum_iter == 0 and ((data_iter_step + 1) % (accum_iter * args.print_freq)) == 0:
-            loss_value_reduce = misc.all_reduce_mean(loss_value)  # MUST BE EXECUTED BY ALL NODES
+        if (data_iter_step + 1) % accum_iter == 0 and (
+            (data_iter_step + 1) % (accum_iter * args.print_freq)) == 0:
+            loss_value_reduce = misc.all_reduce_mean(
+                loss_value)  # MUST BE EXECUTED BY ALL NODES
             if log_writer is None:
                 continue
             """ We use epoch_1000x as the x-axis in tensorboard.
@@ -339,27 +479,40 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
 
 @torch.no_grad()
-def test_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
-                   data_loader: Sized, device: torch.device, epoch: int,
-                   args, log_writer=None, prefix='test'):
+def test_one_epoch(model: torch.nn.Module,
+                   criterion: torch.nn.Module,
+                   data_loader: Sized,
+                   device: torch.device,
+                   epoch: int,
+                   args,
+                   log_writer=None,
+                   prefix='test'):
 
     model.eval()
     metric_logger = misc.MetricLogger(delimiter="  ")
-    metric_logger.meters = defaultdict(lambda: misc.SmoothedValue(window_size=9**9))
+    metric_logger.meters = defaultdict(
+        lambda: misc.SmoothedValue(window_size=9**9))
     header = 'Test Epoch: [{}]'.format(epoch)
 
     if log_writer is not None:
         print('log_dir: {}'.format(log_writer.log_dir))
 
-    if hasattr(data_loader, 'dataset') and hasattr(data_loader.dataset, 'set_epoch'):
+    if hasattr(data_loader, 'dataset') and hasattr(data_loader.dataset,
+                                                   'set_epoch'):
         data_loader.dataset.set_epoch(epoch)
-    if hasattr(data_loader, 'sampler') and hasattr(data_loader.sampler, 'set_epoch'):
+    if hasattr(data_loader, 'sampler') and hasattr(data_loader.sampler,
+                                                   'set_epoch'):
         data_loader.sampler.set_epoch(epoch)
 
-    for _, batch in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
-        loss_tuple = loss_of_one_batch(batch, model, criterion, device,
+    for _, batch in enumerate(
+            metric_logger.log_every(data_loader, args.print_freq, header)):
+        loss_tuple = loss_of_one_batch(batch,
+                                       model,
+                                       criterion,
+                                       device,
                                        symmetrize_batch=True,
-                                       use_amp=bool(args.amp), ret='loss')
+                                       use_amp=bool(args.amp),
+                                       ret='loss')
         loss_value, loss_details = loss_tuple  # criterion returns two values
         metric_logger.update(loss=float(loss_value), **loss_details)
 
@@ -368,7 +521,10 @@ def test_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     print("Averaged stats:", metric_logger)
 
     aggs = [('avg', 'global_avg'), ('med', 'median')]
-    results = {f'{k}_{tag}': getattr(meter, attr) for k, meter in metric_logger.meters.items() for tag, attr in aggs}
+    results = {
+        f'{k}_{tag}': getattr(meter, attr)
+        for k, meter in metric_logger.meters.items() for tag, attr in aggs
+    }
 
     if log_writer is not None:
         for name, val in results.items():

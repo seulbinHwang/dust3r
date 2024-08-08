@@ -100,5 +100,8 @@ def filter_pairs_seq(pairs, seq_dis_thr, cyclic=False):
 def filter_edges_seq(view1, view2, pred1, pred2, seq_dis_thr, cyclic=False):
     edges = [(int(i), int(j)) for i, j in zip(view1['idx'], view2['idx'])]
     kept = _filter_edges_seq(edges, seq_dis_thr, cyclic=cyclic)
-    print(f'>> Filtering edges more than {seq_dis_thr} frames apart: kept {len(kept)}/{len(edges)} edges')
-    return sel(view1, kept), sel(view2, kept), sel(pred1, kept), sel(pred2, kept)
+    print(
+        f'>> Filtering edges more than {seq_dis_thr} frames apart: kept {len(kept)}/{len(edges)} edges'
+    )
+    return sel(view1, kept), sel(view2, kept), sel(pred1,
+                                                   kept), sel(pred2, kept)

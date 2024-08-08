@@ -12,7 +12,14 @@ from dust3r.utils.misc import invalid_to_zeros, invalid_to_nans
 from dust3r.utils.device import to_numpy
 
 
-def xy_grid(W, H, device=None, origin=(0, 0), unsqueeze=None, cat_dim=-1, homogeneous=False, **arange_kw):
+def xy_grid(W,
+            H,
+            device=None,
+            origin=(0, 0),
+            unsqueeze=None,
+            cat_dim=-1,
+            homogeneous=False,
+            **arange_kw):
     """ Output a (H,W,2) array of int32 
         with output[j,i,0] = i + origin[0]
              output[j,i,1] = j + origin[1]
@@ -65,9 +72,11 @@ def geotrf(Trf, pts, ncol=None, norm=False):
         if Trf.shape[-1] == d:
             pts = torch.einsum("bij, bhwj -> bhwi", Trf, pts)
         elif Trf.shape[-1] == d + 1:
-            pts = torch.einsum("bij, bhwj -> bhwi", Trf[:, :d, :d], pts) + Trf[:, None, None, :d, d]
+            pts = torch.einsum("bij, bhwj -> bhwi", Trf[:, :d, :d],
+                               pts) + Trf[:, None, None, :d, d]
         else:
-            raise ValueError(f'bad shape, not ending with 3 or 4, for {pts.shape=}')
+            raise ValueError(
+                f'bad shape, not ending with 3 or 4, for {pts.shape=}')
     else:
         if Trf.ndim >= 3:
             n = Trf.ndim - 2
@@ -162,7 +171,9 @@ def depthmap_to_pts3d(depth, pseudo_focal, pp=None, **_):
     return pts3d
 
 
-def depthmap_to_camera_coordinates(depthmap, camera_intrinsics, pseudo_focal=None):
+def depthmap_to_camera_coordinates(depthmap,
+                                   camera_intrinsics,
+                                   pseudo_focal=None):
     """
     Args:
         - depthmap (HxW array):
@@ -197,7 +208,8 @@ def depthmap_to_camera_coordinates(depthmap, camera_intrinsics, pseudo_focal=Non
     return X_cam, valid_mask
 
 
-def depthmap_to_absolute_camera_coordinates(depthmap, camera_intrinsics, camera_pose, **kw):
+def depthmap_to_absolute_camera_coordinates(depthmap, camera_intrinsics,
+                                            camera_pose, **kw):
     """
     Args:
         - depthmap (HxW array):
@@ -205,9 +217,10 @@ def depthmap_to_absolute_camera_coordinates(depthmap, camera_intrinsics, camera_
         - camera_pose: a 4x3 or 4x4 cam2world matrix
     Returns:
         pointmap of absolute coordinates (HxWx3 array), and a mask specifying valid pixels."""
-    X_cam, valid_mask = depthmap_to_camera_coordinates(depthmap, camera_intrinsics)
+    X_cam, valid_mask = depthmap_to_camera_coordinates(depthmap,
+                                                       camera_intrinsics)
 
-    X_world = X_cam # default
+    X_world = X_cam  # default
     if camera_pose is not None:
         # R_cam2world = np.float32(camera_params["R_cam2world"])
         # t_cam2world = np.float32(camera_params["t_cam2world"]).squeeze()
@@ -215,7 +228,8 @@ def depthmap_to_absolute_camera_coordinates(depthmap, camera_intrinsics, camera_
         t_cam2world = camera_pose[:3, 3]
 
         # Express in absolute coordinates (invalid depth values)
-        X_world = np.einsum("ik, vuk -> vui", R_cam2world, X_cam) + t_cam2world[None, None, :]
+        X_world = np.einsum("ik, vuk -> vui", R_cam2world,
+                            X_cam) + t_cam2world[None, None, :]
 
     return X_world, valid_mask
 
@@ -246,7 +260,12 @@ def opencv_to_colmap_intrinsics(K):
     return K
 
 
-def normalize_pointcloud(pts1, pts2, norm_mode='avg_dis', valid1=None, valid2=None, ret_factor=False):
+def normalize_pointcloud(pts1,
+                         pts2,
+                         norm_mode='avg_dis',
+                         valid1=None,
+                         valid2=None,
+                         ret_factor=False):
     """ renorm pointmaps pts1, pts2 with norm_mode
     """
     assert pts1.ndim >= 3 and pts1.shape[-1] == 3
@@ -256,8 +275,10 @@ def normalize_pointcloud(pts1, pts2, norm_mode='avg_dis', valid1=None, valid2=No
     if norm_mode == 'avg':
         # gather all points together (joint normalization)
         nan_pts1, nnz1 = invalid_to_zeros(pts1, valid1, ndim=3)
-        nan_pts2, nnz2 = invalid_to_zeros(pts2, valid2, ndim=3) if pts2 is not None else (None, 0)
-        all_pts = torch.cat((nan_pts1, nan_pts2), dim=1) if pts2 is not None else nan_pts1
+        nan_pts2, nnz2 = invalid_to_zeros(
+            pts2, valid2, ndim=3) if pts2 is not None else (None, 0)
+        all_pts = torch.cat(
+            (nan_pts1, nan_pts2), dim=1) if pts2 is not None else nan_pts1
 
         # compute distance to origin
         all_dis = all_pts.norm(dim=-1)
@@ -282,8 +303,10 @@ def normalize_pointcloud(pts1, pts2, norm_mode='avg_dis', valid1=None, valid2=No
     else:
         # gather all points together (joint normalization)
         nan_pts1 = invalid_to_nans(pts1, valid1, ndim=3)
-        nan_pts2 = invalid_to_nans(pts2, valid2, ndim=3) if pts2 is not None else None
-        all_pts = torch.cat((nan_pts1, nan_pts2), dim=1) if pts2 is not None else nan_pts1
+        nan_pts2 = invalid_to_nans(pts2, valid2,
+                                   ndim=3) if pts2 is not None else None
+        all_pts = torch.cat(
+            (nan_pts1, nan_pts2), dim=1) if pts2 is not None else nan_pts1
 
         # compute distance to origin
         all_dis = all_pts.norm(dim=-1)
@@ -310,10 +333,15 @@ def normalize_pointcloud(pts1, pts2, norm_mode='avg_dis', valid1=None, valid2=No
 
 
 @torch.no_grad()
-def get_joint_pointcloud_depth(z1, z2, valid_mask1, valid_mask2=None, quantile=0.5):
+def get_joint_pointcloud_depth(z1,
+                               z2,
+                               valid_mask1,
+                               valid_mask2=None,
+                               quantile=0.5):
     # set invalid points to NaN
     _z1 = invalid_to_nans(z1, valid_mask1).reshape(len(z1), -1)
-    _z2 = invalid_to_nans(z2, valid_mask2).reshape(len(z2), -1) if z2 is not None else None
+    _z2 = invalid_to_nans(z2, valid_mask2).reshape(
+        len(z2), -1) if z2 is not None else None
     _z = torch.cat((_z1, _z2), dim=-1) if z2 is not None else _z1
 
     # compute median depth overall (ignoring nans)
@@ -325,10 +353,16 @@ def get_joint_pointcloud_depth(z1, z2, valid_mask1, valid_mask2=None, quantile=0
 
 
 @torch.no_grad()
-def get_joint_pointcloud_center_scale(pts1, pts2, valid_mask1=None, valid_mask2=None, z_only=False, center=True):
+def get_joint_pointcloud_center_scale(pts1,
+                                      pts2,
+                                      valid_mask1=None,
+                                      valid_mask2=None,
+                                      z_only=False,
+                                      center=True):
     # set invalid points to NaN
     _pts1 = invalid_to_nans(pts1, valid_mask1).reshape(len(pts1), -1, 3)
-    _pts2 = invalid_to_nans(pts2, valid_mask2).reshape(len(pts2), -1, 3) if pts2 is not None else None
+    _pts2 = invalid_to_nans(pts2, valid_mask2).reshape(
+        len(pts2), -1, 3) if pts2 is not None else None
     _pts = torch.cat((_pts1, _pts2), dim=1) if pts2 is not None else _pts1
 
     # compute median center

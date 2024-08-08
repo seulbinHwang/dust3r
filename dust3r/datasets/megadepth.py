@@ -14,6 +14,7 @@ from dust3r.utils.image import imread_cv2
 
 
 class MegaDepth(BaseStereoViewDataset):
+
     def __init__(self, *args, split, ROOT, **kwargs):
         self.ROOT = ROOT
         super().__init__(*args, **kwargs)
@@ -52,9 +53,11 @@ class MegaDepth(BaseStereoViewDataset):
             assert len(image_id), 'no instance found'
             # both together?
             if len(instances) == 2:
-                valid &= np.in1d(self.pairs['im1_id'], image_id) & np.in1d(self.pairs['im2_id'], image_id)
+                valid &= np.in1d(self.pairs['im1_id'], image_id) & np.in1d(
+                    self.pairs['im2_id'], image_id)
             else:
-                valid &= np.in1d(self.pairs['im1_id'], image_id) | np.in1d(self.pairs['im2_id'], image_id)
+                valid &= np.in1d(self.pairs['im1_id'], image_id) | np.in1d(
+                    self.pairs['im2_id'], image_id)
 
         if opposite:
             valid = ~valid
@@ -82,16 +85,22 @@ class MegaDepth(BaseStereoViewDataset):
             camera_pose = np.float32(camera_params['cam2world'])
 
             image, depthmap, intrinsics = self._crop_resize_if_necessary(
-                image, depthmap, intrinsics, resolution, rng, info=(seq_path, img))
+                image,
+                depthmap,
+                intrinsics,
+                resolution,
+                rng,
+                info=(seq_path, img))
 
-            views.append(dict(
-                img=image,
-                depthmap=depthmap,
-                camera_pose=camera_pose,  # cam2world
-                camera_intrinsics=intrinsics,
-                dataset='MegaDepth',
-                label=osp.relpath(seq_path, self.ROOT),
-                instance=img))
+            views.append(
+                dict(
+                    img=image,
+                    depthmap=depthmap,
+                    camera_pose=camera_pose,  # cam2world
+                    camera_intrinsics=intrinsics,
+                    dataset='MegaDepth',
+                    label=osp.relpath(seq_path, self.ROOT),
+                    instance=img))
 
         return views
 
@@ -101,7 +110,10 @@ if __name__ == "__main__":
     from dust3r.viz import SceneViz, auto_cam_size
     from dust3r.utils.image import rgb
 
-    dataset = MegaDepth(split='train', ROOT="data/megadepth_processed", resolution=224, aug_crop=16)
+    dataset = MegaDepth(split='train',
+                        ROOT="data/megadepth_processed",
+                        resolution=224,
+                        aug_crop=16)
 
     for idx in np.random.permutation(len(dataset)):
         views = dataset[idx]

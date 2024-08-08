@@ -45,6 +45,7 @@ def read_alignments(path_to_alignment):
 
 
 class VislocInLoc(BaseVislocDataset):
+
     def __init__(self, root, pairsfile, topk=1):
         super().__init__()
         self.root = root
@@ -56,34 +57,55 @@ class VislocInLoc(BaseVislocDataset):
         query_path = os.path.join(self.root, 'query')
         kdata_query = kapture_from_dir(query_path)
         assert kdata_query.records_camera is not None
-        kdata_query_searchindex = {kdata_query.records_camera[(timestamp, sensor_id)]: (timestamp, sensor_id)
-                                   for timestamp, sensor_id in kdata_query.records_camera.key_pairs()}
-        self.query_data = {'path': query_path, 'kdata': kdata_query, 'searchindex': kdata_query_searchindex}
+        kdata_query_searchindex = {
+            kdata_query.records_camera[(timestamp, sensor_id)]:
+                (timestamp, sensor_id)
+            for timestamp, sensor_id in kdata_query.records_camera.key_pairs()
+        }
+        self.query_data = {
+            'path': query_path,
+            'kdata': kdata_query,
+            'searchindex': kdata_query_searchindex
+        }
 
         map_path = os.path.join(self.root, 'mapping')
         kdata_map = kapture_from_dir(map_path)
         assert kdata_map.records_camera is not None and kdata_map.trajectories is not None
-        kdata_map_searchindex = {kdata_map.records_camera[(timestamp, sensor_id)]: (timestamp, sensor_id)
-                                 for timestamp, sensor_id in kdata_map.records_camera.key_pairs()}
-        self.map_data = {'path': map_path, 'kdata': kdata_map, 'searchindex': kdata_map_searchindex}
+        kdata_map_searchindex = {
+            kdata_map.records_camera[(timestamp, sensor_id)]:
+                (timestamp, sensor_id)
+            for timestamp, sensor_id in kdata_map.records_camera.key_pairs()
+        }
+        self.map_data = {
+            'path': map_path,
+            'kdata': kdata_map,
+            'searchindex': kdata_map_searchindex
+        }
 
         try:
-            self.pairs = get_ordered_pairs_from_file(os.path.join(self.root, 'pairfiles/query', pairsfile + '.txt'))
+            self.pairs = get_ordered_pairs_from_file(
+                os.path.join(self.root, 'pairfiles/query', pairsfile + '.txt'))
         except Exception as e:
             # if using pairs from hloc
             self.pairs = {}
-            with open(os.path.join(self.root, 'pairfiles/query', pairsfile + '.txt'), 'r') as fid:
+            with open(
+                    os.path.join(self.root, 'pairfiles/query',
+                                 pairsfile + '.txt'), 'r') as fid:
                 lines = fid.readlines()
                 for line in lines:
                     splits = line.rstrip("\n\r").split(" ")
-                    self.pairs.setdefault(splits[0].replace('query/', ''), []).append(
-                        (splits[1].replace('database/cutouts/', ''), 1.0)
-                    )
+                    self.pairs.setdefault(splits[0].replace('query/', ''),
+                                          []).append((splits[1].replace(
+                                              'database/cutouts/', ''), 1.0))
 
         self.scenes = kdata_query.records_camera.data_list()
 
-        self.aligns_DUC1 = read_alignments(os.path.join(self.root, 'mapping/DUC1_alignment/all_transformations.txt'))
-        self.aligns_DUC2 = read_alignments(os.path.join(self.root, 'mapping/DUC2_alignment/all_transformations.txt'))
+        self.aligns_DUC1 = read_alignments(
+            os.path.join(self.root,
+                         'mapping/DUC1_alignment/all_transformations.txt'))
+        self.aligns_DUC2 = read_alignments(
+            os.path.join(self.root,
+                         'mapping/DUC2_alignment/all_transformations.txt'))
 
     def __len__(self):
         return len(self.scenes)
@@ -93,10 +115,12 @@ class VislocInLoc(BaseVislocDataset):
         query_image = self.scenes[idx]
         map_images = [p[0] for p in self.pairs[query_image][:self.topk]]
         views = []
-        dataarray = [(query_image, self.query_data, False)] + [(map_image, self.map_data, True)
-                                                               for map_image in map_images]
+        dataarray = [(query_image, self.query_data, False)] + [
+            (map_image, self.map_data, True) for map_image in map_images
+        ]
         for idx, (imgname, data, should_load_depth) in enumerate(dataarray):
-            imgpath, kdata, searchindex = map(data.get, ['path', 'kdata', 'searchindex'])
+            imgpath, kdata, searchindex = map(data.get,
+                                              ['path', 'kdata', 'searchindex'])
 
             timestamp, camera_id = searchindex[imgname]
 
@@ -104,21 +128,24 @@ class VislocInLoc(BaseVislocDataset):
             camera_params = kdata.sensors[camera_id].camera_params
             W, H, f, cx, cy = camera_params
             distortion = [0, 0, 0, 0]
-            intrinsics = np.float32([(f, 0, cx),
-                                     (0, f, cy),
-                                     (0, 0, 1)])
+            intrinsics = np.float32([(f, 0, cx), (0, f, cy), (0, 0, 1)])
 
-            if kdata.trajectories is not None and (timestamp, camera_id) in kdata.trajectories:
-                cam_to_world = cam_to_world_from_kapture(kdata, timestamp, camera_id)
+            if kdata.trajectories is not None and (
+                    timestamp, camera_id) in kdata.trajectories:
+                cam_to_world = cam_to_world_from_kapture(
+                    kdata, timestamp, camera_id)
             else:
                 cam_to_world = np.eye(4, dtype=np.float32)
 
             # Load RGB image
-            rgb_image = PIL.Image.open(os.path.join(imgpath, 'sensors/records_data', imgname)).convert('RGB')
+            rgb_image = PIL.Image.open(
+                os.path.join(imgpath, 'sensors/records_data',
+                             imgname)).convert('RGB')
             rgb_image.load()
 
             W, H = rgb_image.size
-            resize_func, to_resize, to_orig = get_resize_function(self.maxdim, self.patch_size, H, W)
+            resize_func, to_resize, to_orig = get_resize_function(
+                self.maxdim, self.patch_size, H, W)
 
             rgb_tensor = resize_func(ImgNorm(rgb_image))
 
@@ -135,7 +162,9 @@ class VislocInLoc(BaseVislocDataset):
 
             # Load depthmap
             if should_load_depth:
-                depthmap_filename = os.path.join(imgpath, 'sensors/records_data', imgname + '.mat')
+                depthmap_filename = os.path.join(imgpath,
+                                                 'sensors/records_data',
+                                                 imgname + '.mat')
                 depthmap = scipy.io.loadmat(depthmap_filename)
 
                 pt3d_cut = depthmap['XYZcut']
@@ -158,7 +187,8 @@ class VislocInLoc(BaseVislocDataset):
                 view["valid"] = pts3d_full.sum(dim=-1).isfinite()
 
                 HR, WR = rgb_tensor.shape[1:]
-                _, _, pts3d_rescaled, valid_rescaled = rescale_points3d(pts2d, pts3d, to_resize, HR, WR)
+                _, _, pts3d_rescaled, valid_rescaled = rescale_points3d(
+                    pts2d, pts3d, to_resize, HR, WR)
                 pts3d_rescaled = torch.from_numpy(pts3d_rescaled)
                 valid_rescaled = torch.from_numpy(valid_rescaled)
                 view['pts3d_rescaled'] = pts3d_rescaled
