@@ -132,7 +132,7 @@ type(confidence_masks): <class 'list'>
     import matplotlib
     from matplotlib import pyplot as pl
 
-    matplotlib.use('TkAgg')  # 또는 'Qt5Agg'
+    matplotlib.use('Qt5Agg')  # 또는 'Qt5Agg'
     n_viz = 10
     match_idx_to_viz = np.round(np.linspace(0, num_matches - 1,
                                             n_viz)).astype(int)
