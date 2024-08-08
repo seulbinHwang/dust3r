@@ -4,6 +4,7 @@ from dust3r.utils.image import load_images
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
 from typing import List, Union, Dict, Any, Tuple
+import torch
 
 if __name__ == '__main__':
     device = 'cuda'
@@ -17,8 +18,8 @@ if __name__ == '__main__':
     model = AsymmetricCroCo3DStereo.from_pretrained(model_name).to(device)
     # load_images는 이미지 목록 또는 디렉토리를 받을 수 있습니다.
     images: List[Dict[str, Any]] = load_images([
-        'data/left_frames/2024-08-05 12:49:44.035000.png',
-        'data/right_frames/2024-08-05 12:49:44.033333.png'
+        'data/left_frames/0.png',
+        'data/right_frames/0.png'
     ],
                          size=512)
     # pairs: 길이 2 짜리 리스트. Tuple(1-2쌍), Tuple(2-1쌍)
@@ -27,8 +28,40 @@ if __name__ == '__main__':
                        scene_graph='complete',
                        prefilter=None,
                        symmetrize=True)
-    output = inference(pairs, model, device, batch_size=batch_size)
-
+    output: dict = inference(pairs, model, device, batch_size=batch_size)
+    """
+    view1 (str): Dict
+        img 
+            tensor (2, 3, 288, 512)
+                288, 512: 이미지의 높이와 너비 ???
+        true_shape
+            tensor (2, 2)
+        idx
+            list: [1, 0]배치 내에서 이미지의 인덱스를 나타내는 리스트
+        instance
+            list: ['1', '0']
+    view2 (str): Dict
+        img 
+            tensor (2, 3, 288, 512)
+        true_shape
+            tensor (2, 2)
+        idx
+            list: [0, 1]
+        instance
+            list: ['0', '1']
+    pred1 (str): Dict
+        pts3d
+            tensor: (2, 288, 512, 3)
+        conf
+            tensor: (2, 288, 512)
+    pred2 (str): Dict
+        pts3d_in_other_view
+            tensor: (2, 288, 512, 3)
+        conf
+            tensor: (2, 288, 512)
+    loss (str): None
+    
+    """
     # 이 단계에서, raw dust3r 예측을 가지고 있습니다.
     view1, pred1 = output['view1'], output['pred1']
     view2, pred2 = output['view2'], output['pred2']
