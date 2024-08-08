@@ -323,7 +323,10 @@ def add_scene_cam(scene,
         H = W = 1
 
     if isinstance(focal, np.ndarray):
-        focal = focal[0]
+        try:
+            focal = focal[0]
+        except:
+            pass
     if not focal:
         focal = min(H, W) * 1.1  # default value
 

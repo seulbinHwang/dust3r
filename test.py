@@ -84,7 +84,7 @@ if __name__ == '__main__':
     #       compute_global_alignment를 실행할 필요가 없습니다.
     scene: PairViewer = global_aligner(output,
                            device=device,
-                           mode=GlobalAlignerMode.PairViewer)#GlobalAlignerMode.PointCloudOptimizer)
+                           mode=GlobalAlignerMode.PointCloudOptimizer)#GlobalAlignerMode.PointCloudOptimizer)
     loss = scene.compute_global_alignment(init="mst",
                                           niter=niter,
                                           schedule=schedule,
@@ -111,9 +111,6 @@ type(confidence_masks): <class 'list'>
     poses = scene.get_im_poses()
     pts3d = scene.get_pts3d()
     confidence_masks = scene.get_masks()
-    print("imgs[0].shape:", imgs[0].shape)
-    print("pts3d[0].shape:", pts3d[0].shape)
-    print("confidence_masks[0].shape:", confidence_masks[0].shape)
 
 
     # 재구성 시각화
