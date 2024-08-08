@@ -2,7 +2,7 @@ from dust3r.inference import inference
 from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.utils.image import load_images
 from dust3r.image_pairs import make_pairs
-from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
+from dust3r.cloud_opt import global_aligner, GlobalAlignerMode, BasePCOptimizer, PairViewer
 from typing import List, Union, Dict, Any, Tuple
 import torch
 
@@ -68,21 +68,23 @@ if __name__ == '__main__':
     # 여기서 view1, pred1, view2, pred2는 길이가 2인 리스트의 딕셔너리입니다.
     #  -> 대칭화를 하기 때문에 (im1, im2)와 (im2, im1) 쌍을 가지고 있습니다.
     # 각 view에는 다음이 포함됩니다:
-    # 정수 이미지 식별자: view1['idx']와 view2['idx']
-    # 이미지: view1['img']와 view2['img']
     # 이미지 크기: view1['true_shape']와 view2['true_shape']
-    # 데이터 로더에 의해 출력된 인스턴스 문자열: view1['instance']와 view2['instance']
-    # pred1과 pred2는 신뢰도 값을 포함합니다: pred1['conf']와 pred2['conf']
-    # pred1은 view1['img'] 공간에서 view1['img']의 3D 포인트를 포함합니다: pred1['pts3d']
-    # pred2는 view2['img'] 공간에서 view1['img']의 3D 포인트를 포함합니다: pred2['pts3d_in_other_view']
+    # pred1과 pred2는 신뢰도 값을 포함합니다:
+    # pred1['conf']와 pred2['conf']
+    # pred1은 view1['img'] 공간에서 view1['img']의 3D 포인트를 포함합니다:
+    # pred1['pts3d']
+    # pred2는 view2['img'] 공간에서 view1['img']의 3D 포인트를 포함합니다:
+    # pred2['pts3d_in_other_view']
 
     # 다음으로 global_aligner를 사용하여 예측을 정렬합니다.
     # 작업에 따라 raw 출력을 그대로 사용해도 될 수 있습니다.
-    # 입력 이미지가 두 개뿐인 경우, GlobalAlignerMode.PairViewer를 사용할 수 있습니다: 출력만 변환됩니다.
-    # GlobalAlignerMode.PairViewer를 사용하는 경우, compute_global_alignment를 실행할 필요가 없습니다.
-    scene = global_aligner(output,
+    # 입력 이미지가 두 개뿐인 경우, GlobalAlignerMode.PairViewer를 사용할 수 있습니다:
+    #   출력만 변환됩니다.
+    #   GlobalAlignerMode.PairViewer를 사용하는 경우,
+    #       compute_global_alignment를 실행할 필요가 없습니다.
+    scene: PairViewer = global_aligner(output,
                            device=device,
-                           mode=GlobalAlignerMode.PointCloudOptimizer)
+                           mode=GlobalAlignerMode.PairViewer)#GlobalAlignerMode.PointCloudOptimizer)
     loss = scene.compute_global_alignment(init="mst",
                                           niter=niter,
                                           schedule=schedule,
@@ -94,10 +96,16 @@ if __name__ == '__main__':
     poses = scene.get_im_poses()
     pts3d = scene.get_pts3d()
     confidence_masks = scene.get_masks()
+    print("type(imgs):", type(imgs))
+    print("type(focals):", type(focals))
+    print("type(poses):", type(poses))
+    print("type(pts3d):", type(pts3d))
+    print("type(confidence_masks):", type(confidence_masks))
+
 
     # 재구성 시각화
     scene.show()
-
+    raise NotImplementedError("이 코드는 아직 완전히 구현되지 않았습니다.")
     # 두 이미지 간의 2D-2D 매칭 찾기
     from dust3r.utils.geometry import find_reciprocal_matches, xy_grid
     pts2d_list, pts3d_list = [], []

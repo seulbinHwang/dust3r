@@ -13,7 +13,68 @@ from dust3r.cloud_opt.base_opt import BasePCOptimizer
 from dust3r.utils.geometry import inv, geotrf, depthmap_to_absolute_camera_coordinates
 from dust3r.cloud_opt.commons import edge_str
 from dust3r.post_process import estimate_focal_knowing_depth
+"""
+### `PairViewer` 클래스의 목적과 내용
 
+#### 목적
+
+`PairViewer` 클래스는 두 이미지 쌍에 대한 "시각적 결과를 시각화"하기 위한 더미 최적화 도구
+이 클래스는 주로 결과를 확인하고 디버깅하는 데 사용
+이를 통해 이미지 쌍 간의 관계를 시각화하고, 각 이미지의 3D 포인트 클라우드 및 포즈를 계산할 수 있음
+
+#### 요약
+
+- 두 이미지 간의 3D 포인트 클라우드 및 포즈를 계산하여 시각화하고, 결과를 디버깅하는 데 사용
+- 각 이미지의 3D 포인트 클라우드를 계산하고, 이미지 간의 상대적인 포즈를 추정합니다.
+- 이미지 쌍 간의 신뢰도를 계산하고, 신뢰도가 높은 쪽의 포즈를 기준으로 데이터를 설정합니다.
+- 이 클래스는 실제 학습 또는 예측보다는 결과를 시각적으로 확인하고 디버깅하는 데 주로 사용됩니다.
+
+
+#### 주요 기능 및 내용
+
+1. **초기화 (`__init__` 메서드)**:
+   - 입력 파라미터를 받아 초기화를 수행
+   - 이미지 쌍이 대칭인지 확인하고, 
+        - 각 이미지 쌍에 대한 신뢰도(confidence)와 초점 거리(focal length)를 계산
+   - 각 이미지에 대한 3D 포인트 클라우드를 추정하고, 
+        - 이를 바탕으로 이미지 간의 상대적인 포즈를 계산
+   - 신뢰도가 높은 쪽의 포즈를 기준으로 
+        - 포인트 클라우드(depth) 및 이미지 포즈(im_poses)를 설정
+
+2. **_set_depthmap 메서드**:
+   - 깊이 맵을 설정하는 메서드지만, `PairViewer`에서는 무시됩니다. 
+   - 이는 디버깅 또는 시각화 목적이기 때문에 깊이 맵 설정을 필요로 하지 않습니다.
+
+3. **get_depthmaps 메서드**:
+   - 각 이미지의 깊이 맵을 반환합니다.
+
+4. **_set_focal 메서드**:
+   - 주어진 인덱스의 초점 거리를 설정합니다.
+
+5. **get_focals 메서드**:
+   - 초점 거리 목록을 반환
+
+6. **get_known_focal_mask 메서드**:
+   - 초점 거리가 고정된(fixed) 여부를 나타내는 마스크를 반환
+
+7. **get_principal_points 메서드**:
+   - 주점(principal point) 목록을 반환
+
+8. **get_intrinsics 메서드**:
+   - 카메라 내적 행렬(intrinsics) 목록을 반환
+
+9. **get_im_poses 메서드**:
+   - 이미지 포즈 목록을 반환
+
+10. **depth_to_pts3d 메서드**:
+   - 깊이 맵을 3D 포인트 클라우드로 변환하여 반환
+
+11. **forward 메서드**:
+   - 더미 메서드로, 나노(NaN) 값을 반환합니다. 
+   - 이 클래스는 주로 시각화 목적이기 때문에 실제로 forward 연산을 수행하지 않습니다.
+
+
+"""
 
 class PairViewer(BasePCOptimizer):
     """

@@ -11,7 +11,77 @@ import torch.nn as nn
 from dust3r.cloud_opt.base_opt import BasePCOptimizer
 from dust3r.utils.geometry import xy_grid, geotrf
 from dust3r.utils.device import to_cpu, to_numpy
+"""
+### `PointCloudOptimizer` 클래스의 목적과 내용
 
+#### 목적
+
+`PointCloudOptimizer` 클래스는 여러 이미지 쌍으로부터 관찰된 포인트 클라우드 데이터를 사용하여 
+    전체 장면을 최적화하는 도구
+    이 클래스는 이미지 간의 관계를 그래프 구조로 표현하고, 
+    각 이미지에 대한 카메라 포즈와 깊이 맵을 최적화하여 전체 장면의 일관된 3D 재구성을 제공
+
+#### 요약
+
+- **전체 장면 최적화**: 여러 이미지 쌍을 사용하여 전체 3D 장면을 최적화
+- **카메라 포즈 및 깊이 맵 최적화**: 
+    각 이미지의 카메라 포즈와 깊이 맵을 최적화하여 일관된 3D 재구성을 제공합니다.
+- **초점 거리 및 주점 설정**: 
+    각 이미지의 카메라 내적 파라미터를 설정하고 최적화
+- **손실 계산**: 
+    이미지 쌍 간의 예측된 3D 포인트 클라우드를 정렬하고, 최적화 손실을 계산
+
+#### 주요 기능 및 내용
+
+1. **초기화 (`__init__` 메서드)**:
+   - 클래스 초기화 시, 카메라 포즈, 초점 거리, 주점(principal point) 등을 매개변수로 받아 설정
+   - 각 이미지의 깊이 맵, 포즈, 초점 거리 등을 최적화할 파라미터로 설정
+   - 각 이미지의 해상도와 크기를 기반으로 최대 영역을 계산하고, 이를 기준으로 파라미터 스택을 생성
+
+2. **preset_pose 메서드**:
+   - 주어진 카메라 포즈를 설정합니다.
+   - 카메라 포즈를 설정할 때, 주어진 마스크에 따라 선택된 포즈만 설정
+
+3. **preset_focal 메서드**:
+   - 주어진 초점 거리를 설정
+   - 초점 거리를 설정할 때, 주어진 마스크에 따라 선택된 초점 거리만 설정
+
+4. **preset_principal_point 메서드**:
+   - 주어진 주점을 설정합니다.
+   - 주점을 설정할 때, 주어진 마스크에 따라 선택된 주점만 설정합니다.
+
+5. **get_focals 메서드**:
+   - 현재 설정된 모든 초점 거리를 반환합니다.
+
+6. **get_known_focal_mask 메서드**:
+   - 초점 거리가 고정된(fixed) 여부를 나타내는 마스크를 반환합니다.
+
+7. **get_principal_points 메서드**:
+   - 현재 설정된 모든 주점을 반환합니다.
+
+8. **get_intrinsics 메서드**:
+   - 카메라 내적 행렬(intrinsics)을 반환합니다.
+
+9. **get_im_poses 메서드**:
+   - 각 이미지의 카메라 포즈(월드 좌표계에서 카메라 좌표계로의 변환)를 반환합니다.
+
+10. **_set_depthmap 메서드**:
+    - 주어진 깊이 맵을 설정합니다.
+
+11. **get_depthmaps 메서드**:
+    - 모든 이미지의 깊이 맵을 반환합니다.
+
+12. **depth_to_pts3d 메서드**:
+    - 깊이 맵을 3D 포인트 클라우드로 변환하여 반환합니다.
+
+13. **get_pts3d 메서드**:
+    - 3D 포인트 클라우드를 반환합니다.
+
+14. **forward 메서드**:
+    - 모델의 순전파(forward) 연산을 수행합니다.
+    - 이미지 쌍 간의 예측된 포인트 클라우드를 회전 및 변환하여 정렬하고, 최적화 손실을 계산합니다.
+
+"""
 
 class PointCloudOptimizer(BasePCOptimizer):
     """ Optimize a global scene, given a list of pairwise observations.
