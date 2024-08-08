@@ -29,7 +29,7 @@ if __name__ == '__main__':
                        prefilter=None,
                        symmetrize=True)
     output: dict = inference(pairs, model, device, batch_size=batch_size)
-    """
+    """ output
     view1 (str): Dict
         img 
             tensor (2, 3, 288, 512)
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     #       compute_global_alignment를 실행할 필요가 없습니다.
     scene: PairViewer = global_aligner(output,
                            device=device,
-                           mode=GlobalAlignerMode.PointCloudOptimizer)#GlobalAlignerMode.PointCloudOptimizer)
+                           mode=GlobalAlignerMode.PairViewer)#GlobalAlignerMode.PointCloudOptimizer)
     loss = scene.compute_global_alignment(init="mst",
                                           niter=niter,
                                           schedule=schedule,
@@ -109,7 +109,6 @@ type(confidence_masks): <class 'list'>
     imgs: List = scene.imgs
     focals = scene.get_focals()
     poses = scene.get_im_poses()
-    print("poses:", poses)
     pts3d = scene.get_pts3d()
     confidence_masks = scene.get_masks()
     # 재구성 시각화

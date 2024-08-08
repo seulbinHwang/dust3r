@@ -83,6 +83,40 @@ class PairViewer(BasePCOptimizer):
     """
 
     def __init__(self, *args, **kwargs):
+        """ output
+        view1 (str): Dict
+            img
+                tensor (2, 3, 288, 512)
+                    288, 512: 이미지의 높이와 너비 ???
+            true_shape
+                tensor (2, 2)
+            idx
+                list: [1, 0] 배치 내에서 이미지의 인덱스를 나타내는 리스트
+            instance
+                list: ['1', '0']
+        view2 (str): Dict
+            img
+                tensor (2, 3, 288, 512)
+            true_shape
+                tensor (2, 2)
+            idx
+                list: [0, 1]
+            instance
+                list: ['0', '1']
+        pred1 (str): Dict
+            pts3d
+                tensor: (2, 288, 512, 3)
+            conf
+                tensor: (2, 288, 512)
+        pred2 (str): Dict
+            pts3d_in_other_view
+                tensor: (2, 288, 512, 3)
+            conf
+                tensor: (2, 288, 512)
+        loss (str): None
+
+        """
+        # TODO: 이걸 공부해보자?
         super().__init__(*args, **kwargs)
         assert self.is_symmetrized and self.n_edges == 2
         self.has_im_poses = True
@@ -125,6 +159,8 @@ class PairViewer(BasePCOptimizer):
                                          reprojectionError=5,
                                          flags=cv2.SOLVEPNP_SQPNP)
                 success, R, T, inliers = res
+                print("R:", R)
+                print("T:", T)
                 assert success
 
                 R = cv2.Rodrigues(R)[0]  # world to cam

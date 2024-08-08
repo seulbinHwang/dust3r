@@ -31,7 +31,39 @@ class BasePCOptimizer(nn.Module):
     Graph node: images
     Graph edges: observations = (pred1, pred2)
     """
+    """ output
+    view1 (str): Dict
+        img 
+            tensor (2, 3, 288, 512)
+                288, 512: 이미지의 높이와 너비 ???
+        true_shape
+            tensor (2, 2)
+        idx
+            list: [1, 0]배치 내에서 이미지의 인덱스를 나타내는 리스트
+        instance
+            list: ['1', '0']
+    view2 (str): Dict
+        img 
+            tensor (2, 3, 288, 512)
+        true_shape
+            tensor (2, 2)
+        idx
+            list: [0, 1]
+        instance
+            list: ['0', '1']
+    pred1 (str): Dict
+        pts3d
+            tensor: (2, 288, 512, 3)
+        conf
+            tensor: (2, 288, 512)
+    pred2 (str): Dict
+        pts3d_in_other_view
+            tensor: (2, 288, 512, 3)
+        conf
+            tensor: (2, 288, 512)
+    loss (str): None
 
+    """
     def __init__(self, *args, **kwargs):
         if len(args) == 1 and len(kwargs) == 0:
             other = deepcopy(args[0])
