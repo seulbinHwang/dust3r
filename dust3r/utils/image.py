@@ -64,18 +64,50 @@ def rgb(ftensor, true_shape=None):
     return img.clip(min=0, max=1)
 
 
-def _resize_pil_image(img, long_edge_size):
-    S = max(img.size)
+from typing import List, Union, Dict, Any, Tuple
+import os
+import PIL.Image
+import numpy as np
+from PIL import Image
+
+
+def _resize_pil_image(img: PIL.Image.Image,
+                      long_edge_size: int) -> PIL.Image.Image:
+    """
+    PIL 이미지를 주어진 길이로 리사이즈합니다.
+
+    Args:
+        img (PIL.Image.Image): 리사이즈할 이미지.
+        long_edge_size (int): 긴 변의 길이.
+
+    Returns:
+        PIL.Image.Image: 리사이즈된 이미지.
+    """
+    S: int = max(img.size)
     if S > long_edge_size:
-        interp = PIL.Image.LANCZOS
+        interp: int = PIL.Image.LANCZOS
     elif S <= long_edge_size:
-        interp = PIL.Image.BICUBIC
+        interp: int = PIL.Image.BICUBIC
     new_size = tuple(int(round(x * long_edge_size / S)) for x in img.size)
     return img.resize(new_size, interp)
 
 
-def load_images(folder_or_list, size, square_ok=False, verbose=True):
-    """ open and convert all images in a list or folder to proper input format for DUSt3R
+def load_images(folder_or_list: Union[str, List[str]],
+                size: int,
+                square_ok: bool = False,
+                verbose: bool = True) -> List[Dict[str, Any]]:
+    """
+    리스트나 폴더에서 모든 이미지를 열고 DUSt3R에 적합한 입력 형식으로 변환합니다.
+
+    Args:
+        folder_or_list (Union[str, List[str]]):
+            이미지를 포함한 폴더 경로 또는 이미지 경로 리스트.
+        size (int): 리사이즈할 이미지의 크기.
+        square_ok (bool): 이미지를 정사각형으로 유지할지 여부. 기본값은 False.
+        verbose (bool): 로드 과정의 상세 정보를 출력할지 여부. 기본값은 True.
+
+    Returns:
+        List[Dict[str, Any]]: 변환된 이미지와 관련 메타 데이터를 포함하는 딕셔너리의 리스트.
     """
     if isinstance(folder_or_list, str):
         if verbose:
@@ -83,25 +115,26 @@ def load_images(folder_or_list, size, square_ok=False, verbose=True):
         root, folder_content = folder_or_list, sorted(
             os.listdir(folder_or_list))
 
-    elif isinstance(folder_or_list, list):
+    elif isinstance(folder_or_list, List):
         if verbose:
             print(f'>> Loading a list of {len(folder_or_list)} images')
         root, folder_content = '', folder_or_list
 
     else:
-        raise ValueError(f'bad {folder_or_list=} ({type(folder_or_list)})')
+        raise ValueError(
+            f'bad folder_or_list=({folder_or_list}) ({type(folder_or_list)})')
 
     supported_images_extensions = ['.jpg', '.jpeg', '.png']
     if heif_support_enabled:
         supported_images_extensions += ['.heic', '.heif']
     supported_images_extensions = tuple(supported_images_extensions)
 
-    imgs = []
+    imgs: List[Dict[str, Any]] = []
     for path in folder_content:
         if not path.lower().endswith(supported_images_extensions):
             continue
-        img = exif_transpose(PIL.Image.open(os.path.join(root,
-                                                         path))).convert('RGB')
+        img: PIL.Image.Image = exif_transpose(
+            PIL.Image.open(os.path.join(root, path))).convert('RGB')
         W1, H1 = img.size
         if size == 224:
             # resize short side to 224 (then crop)
@@ -129,7 +162,7 @@ def load_images(folder_or_list, size, square_ok=False, verbose=True):
                  idx=len(imgs),
                  instance=str(len(imgs))))
 
-    assert imgs, 'no images foud at ' + root
+    assert imgs, 'no images found at ' + root
     if verbose:
         print(f' (Found {len(imgs)} images)')
     return imgs

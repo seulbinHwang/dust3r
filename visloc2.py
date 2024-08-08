@@ -165,8 +165,6 @@ if __name__ == '__main__':
 
     query_names = []
     poses_pred = []
-    pose_errors = []
-    angular_errors = []
     for idx in tqdm(range(len(dataset))):
         views = dataset[(idx)]  # 0 is the query
         query_view: Dict[str, Any] = views[0]
@@ -309,25 +307,5 @@ if __name__ == '__main__':
                                                     pnp_mode,
                                                     reprojection_error_img,
                                                     img_size=[W, H])
-
-        if not success:
-            abs_transl_error = float('inf')
-            abs_angular_error = float('inf')
-        else:
-            abs_transl_error, abs_angular_error = get_pose_error(
-                pr_querycam_to_world, query_view['cam_to_world'])
-
-        pose_errors.append(abs_transl_error)
-        angular_errors.append(abs_angular_error)
         poses_pred.append(pr_querycam_to_world)
-
-    xp_label = f'tol_conf_{conf_thr}'
-    if args.output_label:
-        xp_label = args.output_label + '_' + xp_label
-    if reprojection_error_diag_ratio is not None:
-        xp_label = xp_label + f'_reproj_diag_{reprojection_error_diag_ratio}'
-    else:
-        xp_label = xp_label + f'_reproj_err_{reprojection_error}'
-    export_results(args.output_dir, xp_label, query_names, poses_pred)
-    out_string = aggregate_stats(f'{args.dataset}', pose_errors, angular_errors)
-    print(out_string)
+    print("poses_pred: ", poses_pred)

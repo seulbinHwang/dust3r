@@ -9,6 +9,7 @@ import torch
 from dust3r.utils.device import to_cpu, collate_with_cat
 from dust3r.utils.misc import invalid_to_nans
 from dust3r.utils.geometry import depthmap_to_pts3d, geotrf
+from typing import Dict, Any, Tuple, List
 
 
 def _interleave_imgs(img1, img2):
@@ -63,7 +64,11 @@ def loss_of_one_batch(batch,
 
 
 @torch.no_grad()
-def inference(pairs, model, device, batch_size=8, verbose=True):
+def inference(pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]],
+              model,
+              device,
+              batch_size=8,
+              verbose=True):
     if verbose:
         print(f'>> Inference with model on {len(pairs)} image pairs')
     result = []
