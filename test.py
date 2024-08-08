@@ -109,6 +109,7 @@ type(confidence_masks): <class 'list'>
     imgs: List = scene.imgs
     focals = scene.get_focals()
     poses = scene.get_im_poses()
+    print("poses:", poses)
     pts3d = scene.get_pts3d()
     confidence_masks = scene.get_masks()
     # 재구성 시각화
