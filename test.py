@@ -80,11 +80,11 @@ if __name__ == '__main__':
     # 작업에 따라 raw 출력을 그대로 사용해도 될 수 있습니다.
     # 입력 이미지가 두 개뿐인 경우, GlobalAlignerMode.PairViewer를 사용할 수 있습니다:
     #   출력만 변환됩니다.
-    #   GlobalAlignerMode.PairViewer를 사용하는 경우,
+    #   GlobalAlignerMode.PairViewer 를 사용하는 경우,
     #       compute_global_alignment를 실행할 필요가 없습니다.
     scene: PairViewer = global_aligner(output,
                            device=device,
-                           mode=GlobalAlignerMode.PointCloudOptimizer)#GlobalAlignerMode.PointCloudOptimizer)
+                           mode=GlobalAlignerMode.PairViewer)#GlobalAlignerMode.PointCloudOptimizer)
     loss = scene.compute_global_alignment(init="mst",
                                           niter=niter,
                                           schedule=schedule,
