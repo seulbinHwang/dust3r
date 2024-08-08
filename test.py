@@ -21,8 +21,8 @@ if __name__ == '__main__':
         'data/left_frames/0.png',
         'data/left_frames/1.png',
         'data/left_frames/2.png',
-        'data/right_frames/0.png'
-        'data/right_frames/1.png'
+        'data/right_frames/0.png',
+        'data/right_frames/1.png',
         'data/right_frames/2.png'
     ],
                          size=512)
