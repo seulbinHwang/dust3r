@@ -68,7 +68,7 @@ def inference(pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]],
               model,
               device,
               batch_size=8,
-              verbose=True):
+              verbose=True) -> Dict[str, Any]:
     if verbose:
         print(f'>> Inference with model on {len(pairs)} image pairs')
     result = []
@@ -79,16 +79,21 @@ def inference(pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]],
         batch_size = 1
 
     for i in tqdm.trange(0, len(pairs), batch_size, disable=not verbose):
+        # i in range(0, 2, 1) -> i: 0, 1
         res = loss_of_one_batch(collate_with_cat(pairs[i:i + batch_size]),
                                 model, None, device)
-        result.append(to_cpu(res))
+        cpu_res = to_cpu(res)
+        print("cpu_res:", cpu_res)
+        result.append(cpu_res)
 
     result = collate_with_cat(result, lists=multiple_shapes)
+    print("result:", result)
+    raise ValueError("Error")
 
     return result
 
 
-def check_if_same_size(pairs):
+def check_if_same_size(pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]]):
     shapes1 = [img1['img'].shape[-2:] for img1, img2 in pairs]
     shapes2 = [img2['img'].shape[-2:] for img1, img2 in pairs]
     return all(shapes1[0] == s for s in shapes1) and all(
