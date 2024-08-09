@@ -184,7 +184,6 @@ class PairViewer(BasePCOptimizer):
             except:
                 pose = np.eye(4)
             rel_poses.append(torch.from_numpy(pose.astype(np.float32)))
-        raise NotImplementedError('PairViewer is not implemented yet')
         # let's use the pair with the most confidence
         # (0,1)쌍의 결과가, (1,0) 쌍의 결과보다 신뢰도가 높으면
         if confs[0] > confs[1]:
