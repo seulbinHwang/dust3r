@@ -124,14 +124,18 @@ class BasePCOptimizer(nn.Module):
         self.n_imgs = self._check_edges()
 
         # input data
-        pred1_pts = pred1['pts3d']
-        pred2_pts = pred2['pts3d_in_other_view']
+        pred1_pts = pred1['pts3d'] # (2, 288, 512, 3)
+        pred2_pts = pred2['pts3d_in_other_view'] # (2, 288, 512, 3)
+        print("self.str_edges:", self.str_edges, "\n\n\n")
+
         self.pred_i = NoGradParamDict({
             ij: pred1_pts[n] for n, ij in enumerate(self.str_edges)
         })
+        print("self.pred_i:", self.pred_i, "\n\n\n")
         self.pred_j = NoGradParamDict({
             ij: pred2_pts[n] for n, ij in enumerate(self.str_edges)
         })
+        print("self.pred_j:", self.pred_j, "\n\n\n")
         self.imshapes = get_imshapes(self.edges, pred1_pts, pred2_pts)
 
         # work in log-scale with conf
@@ -139,13 +143,15 @@ class BasePCOptimizer(nn.Module):
         pred2_conf = pred2['conf']
         self.min_conf_thr = min_conf_thr
         self.conf_trf = get_conf_trf(conf)
-
         self.conf_i = NoGradParamDict({
             ij: pred1_conf[n] for n, ij in enumerate(self.str_edges)
         })
         self.conf_j = NoGradParamDict({
             ij: pred2_conf[n] for n, ij in enumerate(self.str_edges)
         })
+        print("self.conf_i:", self.conf_i)
+        print("self.conf_j:", self.conf_j)
+        raise NotImplementedError()
         self.im_conf = self._compute_img_conf(pred1_conf, pred2_conf)
         for i in range(len(self.im_conf)):
             self.im_conf[i].requires_grad = False
@@ -180,6 +186,7 @@ class BasePCOptimizer(nn.Module):
 
     @property
     def str_edges(self):
+        # self.edges = [(1, 0), (0, 1)]
         return [edge_str(i, j) for i, j in self.edges]
 
     @property
@@ -202,15 +209,13 @@ class BasePCOptimizer(nn.Module):
     def load_state_dict(self, data):
         return super().load_state_dict(self.state_dict(trainable=False) | data)
 
-    def _check_edges(self):
+    def _check_edges(self) -> int:
         # self.edges = [(1, 0), (0, 1)]
         print("self.edges:", self.edges)
-        indices = sorted({i for edge in self.edges for i in edge})
-        print("indices:", indices)
+        set_ = {i for edge in self.edges for i in edge}
+        indices: List[int] = sorted(set_)
         assert indices == list(range(
             len(indices))), 'bad pair indices: missing values '
-        print("len(indices):", len(indices))
-        raise NotImplementedError()
         return len(indices)
 
     @torch.no_grad()
