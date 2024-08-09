@@ -126,7 +126,13 @@ class PairViewer(BasePCOptimizer):
         self.pp = []
         rel_poses = []
         confs = []
-        for i in range(self.n_imgs):
+        for i in range(self.n_imgs): # 2장
+            """
+            edge_str(0, 1) = '0_1'
+            edge_str(1, 0) = '1_0'
+            """
+            # i=0, conf: (0,1) 쌍에서, 두 이미지가 생성한 pts에 대한 평균 신뢰도 값
+            # i=1, conf: (1,0) 쌍에서, 두 이미지가 생성한 pts에 대한 평균 신뢰도 값
             conf = float(self.conf_i[edge_str(i, 1 - i)].mean() *
                          self.conf_j[edge_str(i, 1 - i)].mean())
             if self.verbose:
@@ -171,6 +177,7 @@ class PairViewer(BasePCOptimizer):
             rel_poses.append(torch.from_numpy(pose.astype(np.float32)))
 
         # let's use the pair with the most confidence
+        # (0,1)쌍의 결과가, (1,0) 쌍의 결과보다 신뢰도가 높으면
         if confs[0] > confs[1]:
             # ptcloud is expressed in camera1
             self.im_poses = [torch.eye(4), rel_poses[1]]  # I, cam2-to-cam1

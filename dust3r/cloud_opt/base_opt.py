@@ -126,32 +126,45 @@ class BasePCOptimizer(nn.Module):
         # input data
         pred1_pts = pred1['pts3d'] # (2, 288, 512, 3)
         pred2_pts = pred2['pts3d_in_other_view'] # (2, 288, 512, 3)
-        print("self.str_edges:", self.str_edges, "\n\n\n")
-
+        self.str_edges: List[str] # ['1_0', '0_1']
+        """
+        self.pred_i: ParameterDict
+            (1_0): (288, 512, 3) # (1,0) 쌍에서 view1의 pts (view1 좌표계 기준)
+            (0_1): (288, 512, 3) # (0,1) 쌍에서 view1의 pts (view 1 좌표계 기준)
+        self.pred_j: ParameterDict
+            (1_0): (288, 512, 3) # (1,0) 쌍에서 view2의 pts (view1 좌표계 기준)
+            (0_1): (288, 512, 3) # (0,1) 쌍에서 view2의 pts (view1 좌표계 기준)
+        """
         self.pred_i = NoGradParamDict({
             ij: pred1_pts[n] for n, ij in enumerate(self.str_edges)
         })
-        print("self.pred_i:", self.pred_i, "\n\n\n")
         self.pred_j = NoGradParamDict({
             ij: pred2_pts[n] for n, ij in enumerate(self.str_edges)
         })
-        print("self.pred_j:", self.pred_j, "\n\n\n")
         self.imshapes = get_imshapes(self.edges, pred1_pts, pred2_pts)
+        for idx, imshape in enumerate(self.imshapes):
+            print(f"imshape[{idx}]:", imshape.shape)
+        raise NotImplementedError()
 
         # work in log-scale with conf
-        pred1_conf = pred1['conf']
-        pred2_conf = pred2['conf']
-        self.min_conf_thr = min_conf_thr
+        pred1_conf = pred1['conf'] # (2, 288, 512)
+        pred2_conf = pred2['conf'] # (2, 288, 512)
+        self.min_conf_thr = min_conf_thr # 3
         self.conf_trf = get_conf_trf(conf)
+        """
+        self.conf_i: ParameterDict
+            (1_0): (288, 512) (1,0) 쌍에서 view1의 pts의 신뢰도 값 (view1 좌표계 기준)
+            (0_1): (288, 512) (0,1) 쌍에서 view1의 pts의 신뢰도 값 (view 1 좌표계 기준)
+        self.conf_j: ParameterDict
+            (1_0): (288, 512) (1,0) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
+            (0_1): (288, 512) (0,1) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
+        """
         self.conf_i = NoGradParamDict({
             ij: pred1_conf[n] for n, ij in enumerate(self.str_edges)
         })
         self.conf_j = NoGradParamDict({
             ij: pred2_conf[n] for n, ij in enumerate(self.str_edges)
         })
-        print("self.conf_i:", self.conf_i)
-        print("self.conf_j:", self.conf_j)
-        raise NotImplementedError()
         self.im_conf = self._compute_img_conf(pred1_conf, pred2_conf)
         for i in range(len(self.im_conf)):
             self.im_conf[i].requires_grad = False
