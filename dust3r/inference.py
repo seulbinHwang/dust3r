@@ -84,10 +84,37 @@ def inference(pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]],
                                 model, None, device)
         cpu_res = to_cpu(res)
         print("cpu_res:", cpu_res)
+        cpu_res: Dict[str, Any]
+        for k1, v1 in cpu_res.items():
+            if isinstance(v1, dict):
+                for k2, v2 in v1.items():
+                    if isinstance(v2, torch.Tensor):
+                        print(f"{k2}: {v2.shape}")
+                    else:
+                        print(f"{k2}: {v2}")
+            else:
+                if isinstance(v1, torch.Tensor):
+                    print(f"{k1}: {v1.shape}")
+                else:
+                    print(f"{k1}: {v1}")
+        """
+        view1, view2, pred1, pred2
+            - Dict[str, Any]
+        """
         result.append(cpu_res)
-
     result = collate_with_cat(result, lists=multiple_shapes)
-    print("result:", result)
+    for k1, v1 in result.items():
+        if isinstance(v1, dict):
+            for k2, v2 in v1.items():
+                if isinstance(v2, torch.Tensor):
+                    print(f"{k2}: {v2.shape}")
+                else:
+                    print(f"{k2}: {v2}")
+        else:
+            if isinstance(v1, torch.Tensor):
+                print(f"{k1}: {v1.shape}")
+            else:
+                print(f"{k1}: {v1}")
     raise ValueError("Error")
 
     return result
