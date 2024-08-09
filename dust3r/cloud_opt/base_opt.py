@@ -35,11 +35,17 @@ class BasePCOptimizer(nn.Module):
     view1 (str): Dict
         img 
             tensor (2, 3, 288, 512)
+                2: (1,0) 쌍에서 view1의 이미지 +  (0,1) 쌍에서 view1의 이미지
                 288, 512: 이미지의 높이와 너비 ???
         true_shape
             tensor (2, 2)
+                - 처음 2: (1,0) 쌍에서 view1의 이미지 shape 
+                        - + (0,1) 쌍에서 view1의 이미지 shape
+                - 두 번째 2: 이미지의 높이와 너비 = (288, 512)
         idx
-            list: [1, 0]배치 내에서 이미지의 인덱스를 나타내는 리스트
+            list: [1, 0]
+                - 처음 쌍에서는 view1이 1 index 
+                - 두번째 쌍에서는 view1이 0 index
         instance
             list: ['1', '0']
     view2 (str): Dict
@@ -54,17 +60,29 @@ class BasePCOptimizer(nn.Module):
     pred1 (str): Dict
         pts3d
             tensor: (2, 288, 512, 3)
+            - 2: (1,0) 쌍에서 view1의 pts (view1 좌표계 기준)
+                +  (0,1) 쌍에서 view1의 pts (view 1 좌표계 기준)
         conf
             tensor: (2, 288, 512)
+                - 2: (1,0) 쌍에서 view1의 pts의 신뢰도 값 (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view1의 pts의 신뢰도 값 (view1 좌표계 기준)
     pred2 (str): Dict
         pts3d_in_other_view
             tensor: (2, 288, 512, 3)
+                - 2: (1,0) 쌍에서 view2의 pts (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view2의 pts (view1 좌표계 기준)
         conf
             tensor: (2, 288, 512)
+                - 2: (1,0) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
     loss (str): None
 
     """
     def __init__(self, *args, **kwargs):
+        """
+        args: output
+        kwargs: device=device, mode=GlobalAlignerMode.PairViewer
+        """
         if len(args) == 1 and len(kwargs) == 0:
             other = deepcopy(args[0])
             attrs = '''edges is_symmetrized dist n_imgs pred_i pred_j imshapes 
@@ -74,6 +92,11 @@ class BasePCOptimizer(nn.Module):
             )
             self.__dict__.update({k: other[k] for k in attrs})
         else:
+            print("args: ", args, "\n\n\n")
+            print("*args: ", *args, "\n\n\n")
+            print("kwargs: ", kwargs, "\n\n\n")
+            print("**kwargs: ", **kwargs, "\n\n\n")
+            raise NotImplementedError()
             self._init_from_views(*args, **kwargs)
 
     def _init_from_views(self,

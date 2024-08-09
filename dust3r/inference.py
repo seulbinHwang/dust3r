@@ -83,46 +83,88 @@ def inference(pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]],
         res = loss_of_one_batch(collate_with_cat(pairs[i:i + batch_size]),
                                 model, None, device)
         cpu_res = to_cpu(res)
-        """ cpu_res
+        """ cpu_res: Dict[str, Any]
+----- view1 -----
+-- img --
+img: torch.Size([1, 3, 288, 512])
+-- true_shape --
+true_shape: torch.Size([1, 2])
+-- idx --
+idx: [0]
+-- instance --
+instance: ['0']
+----- view2 -----
+-- img --
+img: torch.Size([1, 3, 288, 512])
+-- true_shape --
+true_shape: torch.Size([1, 2])
+-- idx --
+idx: [1]
+-- instance --
+instance: ['1']
+----- pred1 -----
+-- pts3d --
+pts3d: torch.Size([1, 288, 512, 3])
+-- conf --
+conf: torch.Size([1, 288, 512])
+----- pred2 -----
+-- conf --
+conf: torch.Size([1, 288, 512])
+-- pts3d_in_other_view --
+pts3d_in_other_view: torch.Size([1, 288, 512, 3])
+----- loss -----
+loss: None
         """
-        print("---------cpu_res:")
-        cpu_res: Dict[str, Any]
-        for k1, v1 in cpu_res.items():
-            print(f"----- {k1} -----")
-            if isinstance(v1, dict):
-                for k2, v2 in v1.items():
-                    print(f"-- {k2} --")
-                    if isinstance(v2, torch.Tensor):
-                        print(f"{k2}: {v2.shape}")
-                    else:
-                        print(f"{k2}: {v2}")
-            else:
-                if isinstance(v1, torch.Tensor):
-                    print(f"{k1}: {v1.shape}")
-                else:
-                    print(f"{k1}: {v1}")
         result.append(cpu_res)
     result = collate_with_cat(result, lists=multiple_shapes)
-    print("---------result:")
-    for k1, v1 in result.items():
-        print(f"----- {k1} -----")
-        if isinstance(v1, dict):
-
-            for k2, v2 in v1.items():
-                print(f"-- {k2} --")
-                if isinstance(v2, torch.Tensor):
-                    print(f"{k2}: {v2.shape}")
-                else:
-                    print(f"{k2}: {v2}")
-        else:
-            if isinstance(v1, torch.Tensor):
-                print(f"{k1}: {v1.shape}")
-            else:
-                print(f"{k1}: {v1}")
-    raise ValueError("Error")
-
     return result
+    """ output
+    view1 (str): Dict
+        img 
+            tensor (2, 3, 288, 512)
+                2: (1,0) 쌍에서 view1의 이미지 +  (0,1) 쌍에서 view1의 이미지
+                288, 512: 이미지의 높이와 너비 ???
+        true_shape
+            tensor (2, 2)
+                - 처음 2: (1,0) 쌍에서 view1의 이미지 shape 
+                        - + (0,1) 쌍에서 view1의 이미지 shape
+                - 두 번째 2: 이미지의 높이와 너비 = (288, 512)
+        idx
+            list: [1, 0]
+                - 처음 쌍에서는 view1이 1 index 
+                - 두번째 쌍에서는 view1이 0 index
+        instance
+            list: ['1', '0']
+    view2 (str): Dict
+        img 
+            tensor (2, 3, 288, 512)
+        true_shape
+            tensor (2, 2)
+        idx
+            list: [0, 1]
+        instance
+            list: ['0', '1']
+    pred1 (str): Dict
+        pts3d
+            tensor: (2, 288, 512, 3)
+            - 2: (1,0) 쌍에서 view1의 pts (view1 좌표계 기준)
+                +  (0,1) 쌍에서 view1의 pts (view 1 좌표계 기준)
+        conf
+            tensor: (2, 288, 512)
+                - 2: (1,0) 쌍에서 view1의 pts의 신뢰도 값 (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view1의 pts의 신뢰도 값 (view1 좌표계 기준)
+    pred2 (str): Dict
+        pts3d_in_other_view
+            tensor: (2, 288, 512, 3)
+                - 2: (1,0) 쌍에서 view2의 pts (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view2의 pts (view1 좌표계 기준)
+        conf
+            tensor: (2, 288, 512)
+                - 2: (1,0) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
+    loss (str): None
 
+    """
 
 def check_if_same_size(pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]]):
     shapes1 = [img1['img'].shape[-2:] for img1, img2 in pairs]

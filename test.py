@@ -96,11 +96,17 @@ instance: <class 'str'>
     view1 (str): Dict
         img 
             tensor (2, 3, 288, 512)
+                2: (1,0) 쌍에서 view1의 이미지 +  (0,1) 쌍에서 view1의 이미지
                 288, 512: 이미지의 높이와 너비 ???
         true_shape
             tensor (2, 2)
+                - 처음 2: (1,0) 쌍에서 view1의 이미지 shape 
+                        - + (0,1) 쌍에서 view1의 이미지 shape
+                - 두 번째 2: 이미지의 높이와 너비 = (288, 512)
         idx
-            list: [1, 0]배치 내에서 이미지의 인덱스를 나타내는 리스트
+            list: [1, 0]
+                - 처음 쌍에서는 view1이 1 index 
+                - 두번째 쌍에서는 view1이 0 index
         instance
             list: ['1', '0']
     view2 (str): Dict
@@ -115,36 +121,33 @@ instance: <class 'str'>
     pred1 (str): Dict
         pts3d
             tensor: (2, 288, 512, 3)
+            - 2: (1,0) 쌍에서 view1의 pts (view1 좌표계 기준)
+                +  (0,1) 쌍에서 view1의 pts (view 1 좌표계 기준)
         conf
             tensor: (2, 288, 512)
+                - 2: (1,0) 쌍에서 view1의 pts의 신뢰도 값 (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view1의 pts의 신뢰도 값 (view1 좌표계 기준)
     pred2 (str): Dict
         pts3d_in_other_view
             tensor: (2, 288, 512, 3)
+                - 2: (1,0) 쌍에서 view2의 pts (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view2의 pts (view1 좌표계 기준)
         conf
             tensor: (2, 288, 512)
+                - 2: (1,0) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
     loss (str): None
     
     """
     # 이 단계에서, raw dust3r 예측을 가지고 있습니다.
     view1, pred1 = output['view1'], output['pred1']
     view2, pred2 = output['view2'], output['pred2']
-    # 여기서 view1, pred1, view2, pred2는 길이가 2인 리스트의 딕셔너리입니다.
-    #  -> 대칭화를 하기 때문에 (im1, im2)와 (im2, im1) 쌍을 가지고 있습니다.
-    # 각 view에는 다음이 포함됩니다:
-    # 이미지 크기: view1['true_shape']와 view2['true_shape']
-    # pred1과 pred2는 신뢰도 값을 포함합니다:
-    # pred1['conf']와 pred2['conf']
-    # pred1은 view1['img'] 공간에서 view1['img']의 3D 포인트를 포함합니다:
-    # pred1['pts3d']
-    # pred2는 view2['img'] 공간에서 view1['img']의 3D 포인트를 포함합니다:
-    # pred2['pts3d_in_other_view']
-
     # 다음으로 global_aligner를 사용하여 예측을 정렬합니다.
     # 작업에 따라 raw 출력을 그대로 사용해도 될 수 있습니다.
     # 입력 이미지가 두 개뿐인 경우, GlobalAlignerMode.PairViewer를 사용할 수 있습니다:
     #   출력만 변환됩니다.
     #   GlobalAlignerMode.PairViewer 를 사용하는 경우,
-    #       compute_global_alignment를 실행할 필요가 없습니다.
+    #       compute_global_alignmenㄷt를 실행할 필요가 없습니다.
     scene: PairViewer = global_aligner(output,
                            device=device,
                            mode=GlobalAlignerMode.PairViewer)#GlobalAlignerMode.PointCloudOptimizer)
