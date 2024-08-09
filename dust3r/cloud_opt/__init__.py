@@ -25,6 +25,7 @@ from .base_opt import BasePCOptimizer
 
 """
 
+
 class GlobalAlignerMode(Enum):
     PointCloudOptimizer = "PointCloudOptimizer"
     ModularPointCloudOptimizer = "ModularPointCloudOptimizer"

@@ -76,6 +76,7 @@ from dust3r.post_process import estimate_focal_knowing_depth
 
 """
 
+
 class PairViewer(BasePCOptimizer):
     """
     This a Dummy Optimizer.
@@ -126,7 +127,7 @@ class PairViewer(BasePCOptimizer):
         self.pp = []
         rel_poses = []
         confs = []
-        for i in range(self.n_imgs): # 2장
+        for i in range(self.n_imgs):  # 2장
             """
             edge_str(0, 1) = '0_1'
             edge_str(1, 0) = '1_0'

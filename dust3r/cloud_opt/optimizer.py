@@ -83,6 +83,7 @@ from dust3r.utils.device import to_cpu, to_numpy
 
 """
 
+
 class PointCloudOptimizer(BasePCOptimizer):
     """ Optimize a global scene, given a list of pairwise observations.
     Graph node: images

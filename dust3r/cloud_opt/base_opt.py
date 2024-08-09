@@ -26,6 +26,7 @@ from dust3r.cloud_opt.commons import (edge_str, ALL_DISTS, NoGradParamDict,
 import dust3r.cloud_opt.init_im_poses as init_fun
 from typing import List, Tuple, Dict, Any, Set
 
+
 class BasePCOptimizer(nn.Module):
     """ Optimize a global scene, given a list of pairwise observations.
     Graph node: images
@@ -78,6 +79,7 @@ class BasePCOptimizer(nn.Module):
     loss (str): None
 
     """
+
     def __init__(self, *args, **kwargs):
         """
         args: output
@@ -124,9 +126,9 @@ class BasePCOptimizer(nn.Module):
         self.n_imgs = self._check_edges()
 
         # input data
-        pred1_pts = pred1['pts3d'] # (2, 288, 512, 3)
-        pred2_pts = pred2['pts3d_in_other_view'] # (2, 288, 512, 3)
-        self.str_edges: List[str] # ['1_0', '0_1']
+        pred1_pts = pred1['pts3d']  # (2, 288, 512, 3)
+        pred2_pts = pred2['pts3d_in_other_view']  # (2, 288, 512, 3)
+        self.str_edges: List[str]  # ['1_0', '0_1']
         """
         self.pred_i: ParameterDict
             (1_0): (288, 512, 3) # (1,0) 쌍에서 view1의 pts (view1 좌표계 기준)
@@ -141,15 +143,15 @@ class BasePCOptimizer(nn.Module):
         self.pred_j = NoGradParamDict({
             ij: pred2_pts[n] for n, ij in enumerate(self.str_edges)
         })
-        self.imshapes = get_imshapes(self.edges, pred1_pts, pred2_pts)
-        for idx, imshape in enumerate(self.imshapes):
-            print(f"imshape[{idx}]:", imshape.shape)
+        self.imshapes: List[Tuple[int,
+                                  int]] = get_imshapes(self.edges, pred1_pts,
+                                                       pred2_pts)
+        print('self.imshapes:', self.imshapes)
         raise NotImplementedError()
-
         # work in log-scale with conf
-        pred1_conf = pred1['conf'] # (2, 288, 512)
-        pred2_conf = pred2['conf'] # (2, 288, 512)
-        self.min_conf_thr = min_conf_thr # 3
+        pred1_conf = pred1['conf']  # (2, 288, 512)
+        pred2_conf = pred2['conf']  # (2, 288, 512)
+        self.min_conf_thr = min_conf_thr  # 3
         self.conf_trf = get_conf_trf(conf)
         """
         self.conf_i: ParameterDict

@@ -166,6 +166,7 @@ loss: None
 
     """
 
+
 def check_if_same_size(pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]]):
     shapes1 = [img1['img'].shape[-2:] for img1, img2 in pairs]
     shapes2 = [img2['img'].shape[-2:] for img1, img2 in pairs]
