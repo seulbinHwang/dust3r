@@ -108,6 +108,25 @@ def load_images(folder_or_list: Union[str, List[str]],
 
     Returns:
         List[Dict[str, Any]]: 변환된 이미지와 관련 메타 데이터를 포함하는 딕셔너리의 리스트.
+    --- image 0 ---
+    img: <class 'torch.Tensor'>
+        torch.Size([1, 3, 288, 512])
+    true_shape: <class 'numpy.ndarray'>
+        [[288 512]]
+    idx: <class 'int'>
+        0
+    instance: <class 'str'>
+        0
+    --- image 1 ---
+    img: <class 'torch.Tensor'>
+        torch.Size([1, 3, 288, 512])
+    true_shape: <class 'numpy.ndarray'>
+        [[288 512]]
+    idx: <class 'int'>
+        1
+    instance: <class 'str'>
+        1
+
     """
     if isinstance(folder_or_list, str):
         if verbose:

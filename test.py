@@ -22,21 +22,45 @@ if __name__ == '__main__':
         'data/right_frames/3.png',
     ],
                          size=512)
-    for idx, image in enumerate(images):
-        print(f"--- image {idx} ---")
-        for k1, v1 in image.items():
-            print(f'{k1}: {type(v1)}')
-            if isinstance(v1, torch.Tensor):
-                print(f'    {v1.shape}')
-            else:
-                print(f'    {v1}')
-    raise NotImplementedError
+    """ images
+    --- image 0 ---
+    img: <class 'torch.Tensor'>
+        torch.Size([1, 3, 288, 512])
+    true_shape: <class 'numpy.ndarray'>
+        [[288 512]]
+    idx: <class 'int'>
+        0
+    instance: <class 'str'>
+        0
+    --- image 1 ---
+    img: <class 'torch.Tensor'>
+        torch.Size([1, 3, 288, 512])
+    true_shape: <class 'numpy.ndarray'>
+        [[288 512]]
+    idx: <class 'int'>
+        1
+    instance: <class 'str'>
+        1
+
+    """
+
     # pairs: 길이 2 짜리 리스트. Tuple(1-2쌍), Tuple(2-1쌍)
     pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]]
     pairs = make_pairs(images,
                        scene_graph='complete',
                        prefilter=None,
                        symmetrize=True)
+    for idx, pair in enumerate(pairs):
+        print(f"--- image {idx} ---")
+        for idx2, a_pair in enumerate(pair):
+            print(f'    --- pair {idx2} ---')
+            for k1, v1 in pair.a_pair():
+                print(f'{k1}: {type(v1)}')
+                if isinstance(v1, torch.Tensor):
+                    print(f'    {v1.shape}')
+                else:
+                    print(f'    {v1}')
+    raise NotImplementedError
     output: dict = inference(pairs, model, device, batch_size=batch_size)
     """ output
     view1 (str): Dict
