@@ -83,10 +83,12 @@ def inference(pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]],
         res = loss_of_one_batch(collate_with_cat(pairs[i:i + batch_size]),
                                 model, None, device)
         cpu_res = to_cpu(res)
+        """ cpu_res
+        """
         print("---------cpu_res:")
         cpu_res: Dict[str, Any]
         for k1, v1 in cpu_res.items():
-            print(f"-- {k1} --")
+            print(f"----- {k1} -----")
             if isinstance(v1, dict):
                 for k2, v2 in v1.items():
                     print(f"-- {k2} --")
@@ -99,15 +101,11 @@ def inference(pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]],
                     print(f"{k1}: {v1.shape}")
                 else:
                     print(f"{k1}: {v1}")
-        """
-        view1, view2, pred1, pred2
-            - Dict[str, Any]
-        """
         result.append(cpu_res)
     result = collate_with_cat(result, lists=multiple_shapes)
     print("---------result:")
     for k1, v1 in result.items():
-        print(f"-- {k1} --")
+        print(f"----- {k1} -----")
         if isinstance(v1, dict):
 
             for k2, v2 in v1.items():
