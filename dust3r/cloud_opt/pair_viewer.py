@@ -135,6 +135,7 @@ class PairViewer(BasePCOptimizer):
 
             H, W = self.imshapes[i]
             pts3d = self.pred_i[edge_str(i, 1 - i)]
+            # TODO: 여기의 값을 바꿔야 함. (주점과 초점거리)
             pp = torch.tensor((W / 2, H / 2))
             focal = float(
                 estimate_focal_knowing_depth(pts3d[None],
