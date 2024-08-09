@@ -95,7 +95,7 @@ class BasePCOptimizer(nn.Module):
             print("args: ", args, "\n\n\n")
             print("*args: ", *args, "\n\n\n")
             print("kwargs: ", kwargs, "\n\n\n")
-            print("**kwargs: ", **kwargs, "\n\n\n")
+            print("**kwargs: ", **kwargs)
             raise NotImplementedError()
             self._init_from_views(*args, **kwargs)
 
