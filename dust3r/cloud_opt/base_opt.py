@@ -24,7 +24,7 @@ from dust3r.cloud_opt.commons import (edge_str, ALL_DISTS, NoGradParamDict,
                                       cosine_schedule, linear_schedule,
                                       get_conf_trf)
 import dust3r.cloud_opt.init_im_poses as init_fun
-
+from typing import List, Tuple, Dict, Any, Set
 
 class BasePCOptimizer(nn.Module):
     """ Optimize a global scene, given a list of pairwise observations.
@@ -92,11 +92,6 @@ class BasePCOptimizer(nn.Module):
             )
             self.__dict__.update({k: other[k] for k in attrs})
         else:
-            print("args: ", args, "\n\n\n")
-            print("*args: ", *args, "\n\n\n")
-            print("kwargs: ", kwargs, "\n\n\n")
-            print("**kwargs: ", **kwargs)
-            raise NotImplementedError()
             self._init_from_views(*args, **kwargs)
 
     def _init_from_views(self,
@@ -118,7 +113,8 @@ class BasePCOptimizer(nn.Module):
             view1['idx'] = view1['idx'].tolist()
         if not isinstance(view2['idx'], list):
             view2['idx'] = view2['idx'].tolist()
-        self.edges = [
+        # self.edges = [(1, 0), (0, 1)]
+        self.edges: List[Tuple[int, int]] = [
             (int(i), int(j)) for i, j in zip(view1['idx'], view2['idx'])
         ]
         self.is_symmetrized = set(self.edges) == {(j, i) for i, j in self.edges}
@@ -207,9 +203,14 @@ class BasePCOptimizer(nn.Module):
         return super().load_state_dict(self.state_dict(trainable=False) | data)
 
     def _check_edges(self):
+        # self.edges = [(1, 0), (0, 1)]
+        print("self.edges:", self.edges)
         indices = sorted({i for edge in self.edges for i in edge})
+        print("indices:", indices)
         assert indices == list(range(
             len(indices))), 'bad pair indices: missing values '
+        print("len(indices):", len(indices))
+        raise NotImplementedError()
         return len(indices)
 
     @torch.no_grad()
