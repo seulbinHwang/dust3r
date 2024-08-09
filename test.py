@@ -22,6 +22,13 @@ if __name__ == '__main__':
         'data/right_frames/3.png',
     ],
                          size=512)
+    for k1, v1 in images:
+        print(f'{k1}: {type(v1)}')
+        if isinstance(v1, torch.Tensor):
+            print(f'    {v1.shape}')
+        else:
+            print(f'    {v1}')
+    raise NotImplementedError
     # pairs: 길이 2 짜리 리스트. Tuple(1-2쌍), Tuple(2-1쌍)
     pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]]
     pairs = make_pairs(images,
