@@ -24,7 +24,7 @@ if __name__ == '__main__':
                          size=512)
     for idx, image in enumerate(images):
         print(f"--- image {idx} ---")
-        for k1, v1 in image:
+        for k1, v1 in image.items():
             print(f'{k1}: {type(v1)}')
             if isinstance(v1, torch.Tensor):
                 print(f'    {v1.shape}')
