@@ -54,7 +54,7 @@ if __name__ == '__main__':
         print(f"--- image {idx} ---")
         for idx2, a_pair in enumerate(pair):
             print(f'    --- pair {idx2} ---')
-            for k1, v1 in pair.a_pair():
+            for k1, v1 in a_pair.items():
                 print(f'{k1}: {type(v1)}')
                 if isinstance(v1, torch.Tensor):
                     print(f'    {v1.shape}')
