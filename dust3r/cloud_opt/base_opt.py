@@ -143,11 +143,10 @@ class BasePCOptimizer(nn.Module):
         self.pred_j = NoGradParamDict({
             ij: pred2_pts[n] for n, ij in enumerate(self.str_edges)
         })
+        # self.imshapes = [(288, 512), (288, 512)]
         self.imshapes: List[Tuple[int,
                                   int]] = get_imshapes(self.edges, pred1_pts,
                                                        pred2_pts)
-        print('self.imshapes:', self.imshapes)
-        raise NotImplementedError()
         # work in log-scale with conf
         pred1_conf = pred1['conf']  # (2, 288, 512)
         pred2_conf = pred2['conf']  # (2, 288, 512)

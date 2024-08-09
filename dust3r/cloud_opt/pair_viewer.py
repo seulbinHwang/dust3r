@@ -141,13 +141,21 @@ class PairViewer(BasePCOptimizer):
             confs.append(conf)
 
             H, W = self.imshapes[i]
+            # i=0, pts3d: (0,1) 쌍에서 view1의 pts (view 1 좌표계 기준) (288, 512, 3)
+            # i=1, pts3d: (1,0) 쌍에서 view1의 pts (view 1 좌표계 기준) (288, 512, 3)
             pts3d = self.pred_i[edge_str(i, 1 - i)]
             # TODO: 여기의 값을 바꿔야 함. (주점과 초점거리)
             pp = torch.tensor((W / 2, H / 2))
+            """
+            호빈-슬빈
+            슬빈-호빈
+            """
             focal = float(
                 estimate_focal_knowing_depth(pts3d[None],
                                              pp,
                                              focal_mode='weiszfeld'))
+            print("pp:", pp)
+            print("focal:", focal)
             self.focals.append(focal)
             self.pp.append(pp)
 
@@ -176,7 +184,7 @@ class PairViewer(BasePCOptimizer):
             except:
                 pose = np.eye(4)
             rel_poses.append(torch.from_numpy(pose.astype(np.float32)))
-
+        raise NotImplementedError('PairViewer is not implemented yet')
         # let's use the pair with the most confidence
         # (0,1)쌍의 결과가, (1,0) 쌍의 결과보다 신뢰도가 높으면
         if confs[0] > confs[1]:

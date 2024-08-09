@@ -17,6 +17,12 @@ def estimate_focal_knowing_depth(pts3d,
     """ Reprojection method, for when the absolute depth is known:
         1) estimate the camera focal using a robust estimator
         2) reproject points onto true rays, minimizing a certain error
+
+    Args:
+        pts3d: (B, H, W, 3) tensor of 3D points
+        pp: (2,) tensor of principal point
+    Return:
+        focal: (B,) tensor of focal (픽셀 단위)
     """
     B, H, W, THREE = pts3d.shape
     assert THREE == 3
