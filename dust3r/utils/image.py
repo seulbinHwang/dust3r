@@ -161,7 +161,7 @@ def load_images(folder_or_list: Union[str, List[str]],
         else:
             # resize long side to 512
             img = _resize_pil_image(img, size)
-        W, H = img.size
+        W, H = img.size # W: 512, H: 288
         cx, cy = W // 2, H // 2
         if size == 224:
             half = min(cx, cy)
@@ -174,7 +174,8 @@ def load_images(folder_or_list: Union[str, List[str]],
 
         W2, H2 = img.size
         if verbose:
-            print(f' - adding {path} with resolution {W1}x{H1} --> {W2}x{H2}')
+            print(f' - adding {path} with resolution {W1}x{H1} ---> {W}x{H} --> {W2}x{H2}')
+        # show img!
         imgs.append(
             dict(img=ImgNorm(img)[None],
                  true_shape=np.int32([img.size[::-1]]),

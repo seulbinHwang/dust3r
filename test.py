@@ -4,10 +4,10 @@ from dust3r.utils.image import load_images
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode, BasePCOptimizer, PairViewer
 from typing import List, Union, Dict, Any, Tuple
-import torch
 
 if __name__ == '__main__':
-    device = 'cuda'
+    # device mac
+    device = "cpu"
     batch_size = 1
     schedule = 'cosine'
     lr = 0.01
@@ -18,8 +18,8 @@ if __name__ == '__main__':
     model = AsymmetricCroCo3DStereo.from_pretrained(model_name).to(device)
     # load_images는 이미지 목록 또는 디렉토리를 받을 수 있습니다.
     images: List[Dict[str, Any]] = load_images([
-        'data/left_frames/3.png',
-        'data/left_frames/4.png',
+        'data/left_frames/0.png',
+        'data/right_frames/0.png',
     ],
                                                size=512)
     """ images
@@ -51,8 +51,8 @@ if __name__ == '__main__':
                        symmetrize=True)
     """ pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]]
         - len(pairs): 2 -> 0 (1-0의 조합) , 1 (0-1의 조합)
---- pair 0 (1-0의 조합) ---
-    --- 0 ---
+--- pair 0 (1-0의 조합) 슬빈-호빈 ---
+    --- 0 --- 슬빈 
 img: <class 'torch.Tensor'>
     torch.Size([1, 3, 288, 512])
 true_shape: <class 'numpy.ndarray'>
@@ -61,7 +61,7 @@ idx: <class 'int'>
     1
 instance: <class 'str'>
     1
-    --- 1 ---
+    --- 1 --- 호빈
 img: <class 'torch.Tensor'>
     torch.Size([1, 3, 288, 512])
 true_shape: <class 'numpy.ndarray'>
@@ -70,8 +70,8 @@ idx: <class 'int'>
     0
 instance: <class 'str'>
     0
---- pair 1 (0-1의 조합) ---
-    --- 0 ---
+--- pair 1 (0-1의 조합) 호빈-슬빈 ---
+    --- 0 --- 호빈
 img: <class 'torch.Tensor'>
     torch.Size([1, 3, 288, 512])
 true_shape: <class 'numpy.ndarray'>
@@ -80,7 +80,7 @@ idx: <class 'int'>
     0
 instance: <class 'str'>
     0
-    --- 1 ---
+    --- 1 --- 슬빈
 img: <class 'torch.Tensor'>
     torch.Size([1, 3, 288, 512])
 true_shape: <class 'numpy.ndarray'>
@@ -95,6 +95,13 @@ instance: <class 'str'>
                                        model,
                                        device,
                                        batch_size=batch_size)
+    tensor_img = output["view1"]["img"] # (2, 3, 288, 512)
+    # visualize tensor_img.
+    # from matplotlib import pyplot as plt
+    # plt.imshow(tensor_img[0].permute(1, 2, 0).cpu().numpy()) # 오른쪽 슬빈
+    # plt.imshow(tensor_img[1].permute(1, 2, 0).cpu().numpy()) # 왼쪽 호빈
+    #
+    # plt.show()
     """ output
     view1 (str): Dict
         img 
