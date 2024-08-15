@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import cv2
+from scipy.spatial.transform import Rotation as R_scipy
 
 from dust3r.cloud_opt.base_opt import BasePCOptimizer
 from dust3r.utils.geometry import inv, geotrf, depthmap_to_absolute_camera_coordinates
@@ -77,6 +78,59 @@ from dust3r.post_process import estimate_focal_knowing_depth
 """
 
 
+def rpy_to_quaternion(rpy: np.ndarray) -> np.ndarray:
+    """
+    Roll, pitch, yaw 각도를 사용하여 quaternion (w, x, y, z)를 계산합니다.
+
+    Args:
+        roll (float): 롤(Roll) 각도 (라디안 단위)
+        pitch (float): 피치(Pitch) 각도 (라디안 단위)
+        yaw (float): 요(Yaw) 각도 (라디안 단위)
+
+    Returns:
+        np.ndarray: 쿼터니언을 나타내는 (w, x, y, z) 형태의 numpy 배열
+    """
+    roll, pitch, yaw = rpy
+    # Roll, Pitch, Yaw를 Rotation 객체로 변환
+    rotation = R_scipy.from_euler('xyz', [roll, pitch, yaw], degrees=False)
+
+    # Rotation 객체를 quaternion (w, x, y, z) 형태로 변환하여 반환
+    quaternion = rotation.as_quat()
+
+    return quaternion
+
+
+def average_transformation(transformations: np.ndarray) -> np.ndarray:
+    """
+    여러 개의 좌표계 변환 (translation 및 rotation)을 평균하여 최종 평균 변환을 계산합니다.
+
+    Args:
+        transformations (np.ndarray): shape이 (n, 7)인 numpy 배열.
+                                       각 transformation은 (tx, ty, tz, qw, qx, qy, qz)의 형태입니다.
+                                       여기서 (tx, ty, tz)는 translation, (qw, qx, qy, qz)는 rotation을 의미합니다.
+
+    Returns:
+        np.ndarray: shape이 (7,)인 numpy 배열로, 평균 translation과 평균 rotation(quaternion)이 결합된 최종 변환입니다.
+    """
+
+    # 1. Translation 평균 계산
+    translations = transformations[:, :3]  # (n, 3)
+    avg_translation = np.mean(translations, axis=0)  # (3,)
+
+    # 2. Rotation 평균 계산
+    quaternions = transformations[:, 3:]  # (n, 4)
+
+    # scipy의 Rotation 클래스를 사용하여 Karcher mean (geometric mean)을 계산
+    rotations = R_scipy.from_quat(quaternions)  # Rotation 객체로 변환
+    avg_rotation = rotations.mean()  # 평균을 계산
+    avg_quaternion = avg_rotation.as_quat()  # 평균 쿼터니언을 다시 (w, x, y, z)로 변환
+
+    # 3. 최종 평균 transformation 계산
+    avg_transformation = np.hstack((avg_translation, avg_quaternion))  # (7,)
+
+    return avg_transformation
+
+
 class PairViewer(BasePCOptimizer):
     """
     This a Dummy Optimizer.
@@ -117,7 +171,6 @@ class PairViewer(BasePCOptimizer):
         loss (str): None
 
         """
-        # TODO: 이걸 공부해보자?
         super().__init__(*args, **kwargs)
         assert self.is_symmetrized and self.n_edges == 2
         self.has_im_poses = True
@@ -126,7 +179,9 @@ class PairViewer(BasePCOptimizer):
         self.focals = []
         self.pp = []
         rel_poses = []
-        confs = []
+        average_confidences_per_pair = []
+        hobin_transformations = []
+        seulbin_transformations = []
         for i in range(self.n_imgs):  # 2장
             """
             edge_str(0, 1) = '0_1'
@@ -134,49 +189,86 @@ class PairViewer(BasePCOptimizer):
             """
             # i=0, conf: (0,1) 쌍에서, 두 이미지가 생성한 pts에 대한 평균 신뢰도 값
             # i=1, conf: (1,0) 쌍에서, 두 이미지가 생성한 pts에 대한 평균 신뢰도 값
-            conf = float(self.conf_i[edge_str(i, 1 - i)].mean() *
-                         self.conf_j[edge_str(i, 1 - i)].mean())
+            average_confidence = float(self.conf_i[edge_str(i, 1 - i)].mean() *
+                                       self.conf_j[edge_str(i, 1 - i)].mean())
             if self.verbose:
-                print(f'  - {conf=:.3} for edge {i}-{1-i}')
-            confs.append(conf)
-
+                print(f'  - {average_confidence=:.3} for edge {i}-{1-i}')
+            average_confidences_per_pair.append(average_confidence)
+            # self.imshapes = [(288, 512), (288, 512)]
             H, W = self.imshapes[i]
-            # i=0, pts3d: (0,1) 쌍에서 view1의 pts (view 1 좌표계 기준) (288, 512, 3)
-            # i=1, pts3d: (1,0) 쌍에서 view1의 pts (view 1 좌표계 기준) (288, 512, 3)
-            pts3d = self.pred_i[edge_str(i, 1 - i)]
+            """
+            edge_str(0, 1) = '0_1'
+            edge_str(1, 0) = '1_0'
+            
+            self.pred_i: ParameterDict
+                (1_0): (288, 512, 3) # (1,0) 쌍에서 view1의 pts (view1 좌표계 기준)
+                (0_1): (288, 512, 3) # (0,1) 쌍에서 view1의 pts (view 1 좌표계 기준)
+
+            # i=0, main_cam_pts3d: (0,1) 쌍에서 view1(0번)의 pts (view 1(0번) 좌표계 기준) (288, 512, 3)
+            # i=1, main_cam_pts3d: (1,0) 쌍에서 view1(1번)의 pts (view 1(1번) 좌표계 기준) (288, 512, 3)
+            """
+            main_cam_pts3d = self.pred_i[edge_str(i, 1 - i)]  # (288, 512, 3)
             # TODO: 여기의 값을 바꿔야 함. (주점과 초점거리)
-            pp = torch.tensor((W / 2, H / 2))
+            main_cam_pp = torch.tensor((W / 2, H / 2))
             """
             호빈-슬빈
             슬빈-호빈
             """
-            focal = float(
-                estimate_focal_knowing_depth(pts3d[None],
-                                             pp,
+            main_cam_focal = float(
+                estimate_focal_knowing_depth(main_cam_pts3d[None],
+                                             main_cam_pp,
                                              focal_mode='weiszfeld'))
-            print("pp:", pp)
-            print("focal:", focal)
-            self.focals.append(focal)
-            self.pp.append(pp)
+            print("main_cam_pp:", main_cam_pp)
+            print("main_cam_focal:", main_cam_focal)
+            self.focals.append(main_cam_focal)
+            self.pp.append(main_cam_pp)
 
             # estimate the pose of pts1 in image 2
-            pixels = np.mgrid[:W, :H].T.astype(np.float32)
-            pts3d = self.pred_j[edge_str(1 - i, i)].numpy()
-            assert pts3d.shape[:2] == (H, W)
-            msk = self.get_masks()[i].numpy()
-            K = np.float32([(focal, 0, pp[0]), (0, focal, pp[1]), (0, 0, 1)])
+            pixels = np.mgrid[:W, :H].T.astype(np.float32)  # (H, W, 2)
+            """
+            edge_str(0, 1) = '0_1'
+            edge_str(1, 0) = '1_0'
+            self.pred_j: ParameterDict
+                (1_0): (288, 512, 3) # (1,0) 쌍에서 view2의 pts (view1 좌표계 기준)
+                (0_1): (288, 512, 3) # (0,1) 쌍에서 view2의 pts (view1 좌표계 기준)
+
+            # i=0, main_cam_pts3d: (0,1) 쌍에서 view2의(1번)의 pts (view 1(0번) 좌표계 기준) (288, 512, 3)
+            # i=1, main_cam_pts3d: (1,0) 쌍에서 view2의(0번)의 pts (view 1(1번) 좌표계 기준) (288, 512, 3)
+            """
+            other_cam_pts3d = self.pred_j[edge_str(1 - i,
+                                                   i)].numpy()  # (288, 512, 3)
+            assert other_cam_pts3d.shape[:2] == (H, W)
+            # other_cam_pts3d 중, 신뢰도가 self.min_conf_thr 이상인 값만 True로 설정
+            other_cam_conf_mask = self.get_masks()[i].numpy()  # (288, 512)
+            K = np.float32([(main_cam_focal, 0, main_cam_pp[0]),
+                            (0, main_cam_focal, main_cam_pp[1]), (0, 0, 1)])
 
             try:
-                res = cv2.solvePnPRansac(pts3d[msk],
-                                         pixels[msk],
+                res = cv2.solvePnPRansac(other_cam_pts3d[other_cam_conf_mask],
+                                         pixels[other_cam_conf_mask],
                                          K,
                                          None,
                                          iterationsCount=100,
                                          reprojectionError=5,
                                          flags=cv2.SOLVEPNP_SQPNP)
                 success, R, T, inliers = res
-                print("R:", R)
-                print("T:", T)
+                if i == 0:
+                    print("슬빈 cam이 main 일 때, 호빈 cam의 포즈")
+                    print("R:", R)  # (3, 1)
+                    print("T:", T) # (3, 1)
+                    R_ = R.squeeze()
+                    quaternion = rpy_to_quaternion(R_)
+                    transformation_ = np.hstack((T.squeeze(), quaternion)) # (7,)
+                    hobin_transformations.append(transformation_)
+                    raise ValueError
+                else:
+                    print("호빈 cam이 main 일 때, 슬빈 cam의 포즈")
+                    print("R:", R)
+                    print("T:", T)
+                    R_ = R.squeeze()
+                    quaternion = rpy_to_quaternion(R_)
+                    transformation_ = np.hstack((T.squeeze(), quaternion))
+                    seulbin_transformations.append(transformation_)
                 assert success
 
                 R = cv2.Rodrigues(R)[0]  # world to cam
@@ -184,9 +276,13 @@ class PairViewer(BasePCOptimizer):
             except:
                 pose = np.eye(4)
             rel_poses.append(torch.from_numpy(pose.astype(np.float32)))
+        hobin_transformations = np.array(hobin_transformations)
+        seulbin_transformations = np.array(seulbin_transformations) # (2, 7)
+        hobin_transformations = average_transformation(hobin_transformations)
+        seulbin_transformations = average_transformation(seulbin_transformations)
         # let's use the pair with the most confidence
         # (0,1)쌍의 결과가, (1,0) 쌍의 결과보다 신뢰도가 높으면
-        if confs[0] > confs[1]:
+        if average_confidences_per_pair[0] > average_confidences_per_pair[1]:
             # ptcloud is expressed in camera1
             self.im_poses = [torch.eye(4), rel_poses[1]]  # I, cam2-to-cam1
             self.depth = [

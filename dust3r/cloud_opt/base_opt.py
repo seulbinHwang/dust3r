@@ -148,6 +148,16 @@ class BasePCOptimizer(nn.Module):
                                   int]] = get_imshapes(self.edges, pred1_pts,
                                                        pred2_pts)
         # work in log-scale with conf
+        """
+        pred1_conf
+            tensor: (2, 288, 512)
+                - 2: (1,0) 쌍에서 view1의 pts의 신뢰도 값 (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view1의 pts의 신뢰도 값 (view1 좌표계 기준)
+        pred2_conf
+            tensor: (2, 288, 512)
+                - 2: (1,0) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
+        """
         pred1_conf = pred1['conf']  # (2, 288, 512)
         pred2_conf = pred2['conf']  # (2, 288, 512)
         self.min_conf_thr = min_conf_thr  # 3
@@ -166,6 +176,10 @@ class BasePCOptimizer(nn.Module):
         self.conf_j = NoGradParamDict({
             ij: pred2_conf[n] for n, ij in enumerate(self.str_edges)
         })
+        """
+        im_conf[0]: camera0 (호빈) 이 만든 3d pts 에 대한 신뢰도 max 값 (288, 512)
+        im_conf[1]: camera1 (슬빈) 이 만든 3d pts 에 대한 신뢰도 max 값 (288, 512)                
+        """
         self.im_conf = self._compute_img_conf(pred1_conf, pred2_conf)
         for i in range(len(self.im_conf)):
             self.im_conf[i].requires_grad = False
@@ -225,7 +239,6 @@ class BasePCOptimizer(nn.Module):
 
     def _check_edges(self) -> int:
         # self.edges = [(1, 0), (0, 1)]
-        print("self.edges:", self.edges)
         set_ = {i for edge in self.edges for i in edge}
         indices: List[int] = sorted(set_)
         assert indices == list(range(
@@ -233,10 +246,27 @@ class BasePCOptimizer(nn.Module):
         return len(indices)
 
     @torch.no_grad()
-    def _compute_img_conf(self, pred1_conf, pred2_conf):
+    def _compute_img_conf(self, pred1_conf, pred2_conf) -> List[nn.Parameter]:
+        """
+        pred1_conf
+            tensor: (2, 288, 512)
+                - 2: (1,0) 쌍에서 view1의 pts의 신뢰도 값 (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view1의 pts의 신뢰도 값 (view1 좌표계 기준)
+        pred2_conf
+            tensor: (2, 288, 512)
+                - 2: (1,0) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
+                    +  (0,1) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
+        """
+        # self.imshapes = [(288, 512), (288, 512)]
+        # im_conf: [Parameter(288,512), Parameter(288,512)]
         im_conf = nn.ParameterList(
             [torch.zeros(hw, device=self.device) for hw in self.imshapes])
+        # self.edges = [(1, 0), (0, 1)]
         for e, (i, j) in enumerate(self.edges):
+            """
+            im_conf[0]: camera0 (호빈) 이 만든 3d pts 에 대한 신뢰도 max 값 (288, 512)
+            im_conf[1]: camera1 (슬빈) 이 만든 3d pts 에 대한 신뢰도 max 값 (288, 512)                
+            """
             im_conf[i] = torch.maximum(im_conf[i], pred1_conf[e])
             im_conf[j] = torch.maximum(im_conf[j], pred2_conf[e])
         return im_conf
@@ -299,6 +329,10 @@ class BasePCOptimizer(nn.Module):
         return scaled_RT
 
     def get_masks(self):
+        """
+        im_conf[0]: camera0 (호빈) 이 만든 3d pts 에 대한 신뢰도 max 값 (288, 512)
+        im_conf[1]: camera1 (슬빈) 이 만든 3d pts 에 대한 신뢰도 max 값 (288, 512)
+        """
         return [(conf > self.min_conf_thr) for conf in self.im_conf]
 
     def depth_to_pts3d(self):

@@ -2,26 +2,22 @@ from dust3r.inference import inference
 from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.utils.image import load_images
 from dust3r.image_pairs import make_pairs
-from dust3r.cloud_opt import global_aligner, GlobalAlignerMode, BasePCOptimizer, PairViewer
+from dust3r.cloud_opt import global_aligner, GlobalAlignerMode, BasePCOptimizer, \
+    PairViewer
+from dust3r.utils.device import to_numpy
 from typing import List, Union, Dict, Any, Tuple
 
-if __name__ == '__main__':
-    # device mac
-    device = "cpu"
+def run(model, device: str):
     batch_size = 1
     schedule = 'cosine'
     lr = 0.01
     niter = 300
-
-    model_name = "naver/DUSt3R_ViTLarge_BaseDecoder_512_dpt"
-    # 필요한 경우 로컬 체크포인트 경로를 model_name에 지정할 수 있습니다.
-    model = AsymmetricCroCo3DStereo.from_pretrained(model_name).to(device)
     # load_images는 이미지 목록 또는 디렉토리를 받을 수 있습니다.
     images: List[Dict[str, Any]] = load_images([
         'data/left_frames/0.png',
         'data/right_frames/0.png',
     ],
-                                               size=512)
+        size=512)
     """ images
     --- image 0 ---
     img: <class 'torch.Tensor'>
@@ -95,7 +91,7 @@ instance: <class 'str'>
                                        model,
                                        device,
                                        batch_size=batch_size)
-    tensor_img = output["view1"]["img"] # (2, 3, 288, 512)
+    # tensor_img = output["view1"]["img"]  # (2, 3, 288, 512)
     # visualize tensor_img.
     # from matplotlib import pyplot as plt
     # plt.imshow(tensor_img[0].permute(1, 2, 0).cpu().numpy()) # 오른쪽 슬빈
@@ -147,25 +143,21 @@ instance: <class 'str'>
                 - 2: (1,0) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
                     +  (0,1) 쌍에서 view2의 pts의 신뢰도 값 (view1 좌표계 기준)
     loss (str): None
-    
+
     """
     # 이 단계에서, raw dust3r 예측을 가지고 있습니다.
     view1, pred1 = output['view1'], output['pred1']
     view2, pred2 = output['view2'], output['pred2']
     # 다음으로 global_aligner를 사용하여 예측을 정렬합니다.
     # 작업에 따라 raw 출력을 그대로 사용해도 될 수 있습니다.
-    # 입력 이미지가 두 개뿐인 경우, GlobalAlignerMode.PairViewer를 사용할 수 있습니다:
-    #   출력만 변환됩니다.
-    #   GlobalAlignerMode.PairViewer 를 사용하는 경우,
-    #       compute_global_alignmenㄷt를 실행할 필요가 없습니다.
-    scene: PairViewer = global_aligner(output,
-                                       device=device,
-                                       mode=GlobalAlignerMode.PairViewer
-                                      )  #GlobalAlignerMode.PointCloudOptimizer)
-    loss = scene.compute_global_alignment(init="mst",
-                                          niter=niter,
-                                          schedule=schedule,
-                                          lr=lr)
+    mode = GlobalAlignerMode.PointCloudOptimizer if len(
+        images) > 2 else GlobalAlignerMode.PairViewer
+    scene: PairViewer = global_aligner(output, device=device, mode=mode)
+    if mode == GlobalAlignerMode.PointCloudOptimizer:
+        loss = scene.compute_global_alignment(init="mst",
+                                              niter=niter,
+                                              schedule=schedule,
+                                              lr=lr)
     """
 type(imgs): <class 'list'>
     - len(imgs): 2
@@ -183,7 +175,8 @@ type(confidence_masks): <class 'list'>
 
     """
     # scene에서 유용한 값을 가져옵니다:
-    imgs: List = scene.imgs
+    imgs: List = scene.imgs # len(imgs): 2
+    # depths = to_numpy(scene.get_depthmaps())
     focals = scene.get_focals()
     poses = scene.get_im_poses()
     pts3d = scene.get_pts3d()
@@ -192,6 +185,7 @@ type(confidence_masks): <class 'list'>
     scene.show()
     # 두 이미지 간의 2D-2D 매칭 찾기
     from dust3r.utils.geometry import find_reciprocal_matches, xy_grid
+
     pts2d_list, pts3d_list = [], []
     for i in range(2):
         conf_i = confidence_masks[i].cpu().numpy()
@@ -233,3 +227,11 @@ type(confidence_masks): <class 'list'>
                 scalex=False,
                 scaley=False)
     pl.show(block=True)
+
+
+if __name__ == '__main__':
+    device = "cpu"
+    model_name = "naver/DUSt3R_ViTLarge_BaseDecoder_512_dpt"
+    # 필요한 경우 로컬 체크포인트 경로를 model_name에 지정할 수 있습니다.
+    model = AsymmetricCroCo3DStereo.from_pretrained(model_name).to(device)
+    run(model, device)
