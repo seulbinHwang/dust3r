@@ -19,9 +19,9 @@ if __name__ == '__main__':
     # load_images는 이미지 목록 또는 디렉토리를 받을 수 있습니다.
     images: List[Dict[str, Any]] = load_images([
         'data/left_frames/3.png',
-        'data/right_frames/3.png',
+        'data/left_frames/4.png',
     ],
-                         size=512)
+                                               size=512)
     """ images
     --- image 0 ---
     img: <class 'torch.Tensor'>
@@ -91,7 +91,10 @@ instance: <class 'str'>
     1
 
     """
-    output: Dict[str, Any] = inference(pairs, model, device, batch_size=batch_size)
+    output: Dict[str, Any] = inference(pairs,
+                                       model,
+                                       device,
+                                       batch_size=batch_size)
     """ output
     view1 (str): Dict
         img 
@@ -149,8 +152,9 @@ instance: <class 'str'>
     #   GlobalAlignerMode.PairViewer 를 사용하는 경우,
     #       compute_global_alignmenㄷt를 실행할 필요가 없습니다.
     scene: PairViewer = global_aligner(output,
-                           device=device,
-                           mode=GlobalAlignerMode.PairViewer)#GlobalAlignerMode.PointCloudOptimizer)
+                                       device=device,
+                                       mode=GlobalAlignerMode.PairViewer
+                                      )  #GlobalAlignerMode.PointCloudOptimizer)
     loss = scene.compute_global_alignment(init="mst",
                                           niter=niter,
                                           schedule=schedule,
@@ -222,4 +226,3 @@ type(confidence_masks): <class 'list'>
                 scalex=False,
                 scaley=False)
     pl.show(block=True)
-

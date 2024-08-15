@@ -19,7 +19,6 @@ from dust3r_visloc.datasets.utils import cam_to_world_from_kapture, get_resize_f
 from dust3r_visloc.datasets.base_dataset import BaseVislocDataset
 from dust3r.datasets.utils.transforms import ImgNorm
 from dust3r.utils.geometry import depthmap_to_absolute_camera_coordinates, xy_grid, geotrf
-
 """
 위 코드는 "7-scenes 데이터셋을 로드하고 처리"하는 데이터 로더 클래스인 `VislocSevenScenes`
 이 클래스는 시각적 위치 추정 작업에 필요한 데이터를 준비하고, 
@@ -66,6 +65,8 @@ from dust3r.utils.geometry import depthmap_to_absolute_camera_coordinates, xy_gr
    - 쿼리 이미지와 매핑 이미지의 뷰 정보를 딕셔너리 형태로 정리하여 리스트로 반환합니다.
 
 """
+
+
 class VislocSevenScenes(BaseVislocDataset):
 
     def __init__(self, root, subscene, pairsfile, topk=1):
@@ -111,7 +112,6 @@ class VislocSevenScenes(BaseVislocDataset):
             os.path.join(self.root, subscene, 'pairfiles/query',
                          pairsfile + '.txt'))
         self.scenes = kdata_query.records_camera.data_list()
-
 
     def __getitem__(self, idx: int) -> List[Dict[str, Any]]:
         """
@@ -295,6 +295,6 @@ class VislocSevenScenes(BaseVislocDataset):
                 view["valid_rescaled"] = valid_rescaled
             views.append(view)
         return views
+
     def __len__(self):
         return len(self.scenes)
-
